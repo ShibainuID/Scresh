@@ -2,6 +2,7 @@ import "server-only";
 
 import { db } from "@/lib/server/db/client";
 import { AuditLogRepository } from "@/lib/server/repositories/audit-log-repository";
+import { LoanRepository } from "@/lib/server/repositories/loan-repository";
 import { ScreshBatchRepository } from "@/lib/server/repositories/scresh-batch-repository";
 import { ScreshMovementRepository } from "@/lib/server/repositories/scresh-movement-repository";
 import { SessionRepository } from "@/lib/server/repositories/session-repository";
@@ -9,6 +10,7 @@ import { SupervisorAuditRepository } from "@/lib/server/repositories/supervisor-
 import { TenantRepository } from "@/lib/server/repositories/tenant-repository";
 import { UserRepository } from "@/lib/server/repositories/user-repository";
 import { AuthService } from "@/lib/server/services/auth-service";
+import { LoanService } from "@/lib/server/services/loan-service";
 import { PasswordService } from "@/lib/server/services/password-service";
 import { RbacService } from "@/lib/server/services/rbac-service";
 import { ScreshService } from "@/lib/server/services/scresh-service";
@@ -16,12 +18,13 @@ import { SessionService } from "@/lib/server/services/session-service";
 import { TokenService } from "@/lib/server/services/token-service";
 
 export class ServiceContainer {
-  readonly version = 3;
+  readonly version = 4;
   readonly users = new UserRepository(db);
   readonly tenants = new TenantRepository(db);
   readonly sessions = new SessionRepository(db);
   readonly auditLogs = new AuditLogRepository(db);
   readonly supervisorAudits = new SupervisorAuditRepository(db);
+  readonly loans = new LoanRepository(db);
   readonly screshBatches = new ScreshBatchRepository(db);
   readonly screshMovements = new ScreshMovementRepository(db);
   readonly passwords = new PasswordService();
@@ -35,6 +38,7 @@ export class ServiceContainer {
     this.auditLogs,
   );
   readonly rbac = new RbacService();
+  readonly loanService = new LoanService(this.loans);
   readonly scresh = new ScreshService(
     this.screshBatches,
     this.screshMovements,
@@ -47,7 +51,7 @@ const globalForServices = globalThis as unknown as {
 };
 
 export const services =
-  globalForServices.screshServices?.version === 3
+  globalForServices.screshServices?.version === 4
     ? globalForServices.screshServices
     : new ServiceContainer();
 

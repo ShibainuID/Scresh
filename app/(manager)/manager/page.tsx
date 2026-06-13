@@ -1,8 +1,12 @@
 import { RoleDashboard } from "@/components/role-dashboard";
 import { requireRole } from "@/lib/auth/dal";
+import { services } from "@/lib/server/services/container";
 
 export default async function ManagerPage() {
   const session = await requireRole(["manager", "admin"]);
+  const pendingCreditCount = session.user.tenantId
+    ? await services.loanService.countPendingApplications(session.user.tenantId)
+    : 0;
 
   return (
     <RoleDashboard
@@ -30,6 +34,13 @@ export default async function ManagerPage() {
             { label: "Medium risk", value: "7" },
             { label: "High risk", value: "2", status: "review" },
           ],
+        },
+        {
+          title: "Persetujuan Pengajuan Kredit",
+          metrics: [
+            { label: "Menunggu persetujuan", value: String(pendingCreditCount) },
+          ],
+          cta: { label: "Lihat pengajuan", href: "/manager/approvals" },
         },
         {
           title: "Approval Queue",
