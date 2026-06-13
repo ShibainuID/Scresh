@@ -1,5 +1,11 @@
 import Link from "next/link";
-import { AlertTriangle, ChevronLeft, Clock3, Download, FileSearch } from "lucide-react";
+import {
+  AlertTriangle,
+  ChevronLeft,
+  Clock3,
+  Download,
+  FileSearch,
+} from "lucide-react";
 import { AuditFilterBar } from "@/components/audit/audit-filter-bar";
 import { AuditTable } from "@/components/audit/audit-table";
 import { PageHeader } from "@/components/page-header";
@@ -33,7 +39,9 @@ export default async function SupervisorAuditPage({ searchParams }: Props) {
   ]);
 
   const highRiskCount = auditRows.filter((row) => row.risk >= 70).length;
-  const pendingApprovalCount = auditRows.filter((row) => row.status === "pending").length;
+  const pendingApprovalCount = auditRows.filter(
+    (row) => row.status === "pending",
+  ).length;
 
   const exportQuery = new URLSearchParams();
   Object.entries(params).forEach(([key, value]) => {
@@ -51,7 +59,7 @@ export default async function SupervisorAuditPage({ searchParams }: Props) {
           Kembali
         </Link>
 
-        <PageHeader backHref="/supervisor" title="Audit Perubahan Pinjaman" />
+        <PageHeader backHref="/supervisor" title="" />
 
         <section className="grid gap-3 sm:grid-cols-3">
           <SummaryCard
@@ -73,7 +81,9 @@ export default async function SupervisorAuditPage({ searchParams }: Props) {
 
         <section className="flex flex-col gap-4">
           <div className="flex items-center justify-between">
-            <h2 className="font-sans text-xl font-semibold text-forest">Daftar Perubahan</h2>
+            <p className="font-sans text-xl font-semibold text-forest">
+              Daftar Perubahan
+            </p>
             <a
               className="inline-flex h-11 items-center justify-center gap-2 rounded-[10px] bg-forest px-4 text-sm font-bold text-white transition hover:bg-forest/90"
               href={`/api/supervisor/audit/export?${exportQuery.toString()}`}

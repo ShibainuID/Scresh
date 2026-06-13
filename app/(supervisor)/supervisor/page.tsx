@@ -11,11 +11,15 @@ export default async function SupervisorPage() {
     await services.auditRisk.syncAllTenantAnomalies(session.user.tenantId);
   }
 
-  const [notifications, unreadCount, counts] = await Promise.all([
+  const [notifications, unreadCount, auditRows] = await Promise.all([
     services.notifications.listUnreadByUser(session.user.id, 10),
     services.notifications.countUnreadByUser(session.user.id),
-    services.supervisorAudits.getCounts(),
+    services.supervisorAudits.list({}, 200),
   ]);
+
+  const totalAudit = auditRows.length;
+  const highRiskCount = auditRows.filter((row) => row.risk >= 70).length;
+  const pendingApprovalCount = auditRows.filter((row) => row.status === "pending").length;
 
   return (
     <RoleDashboard
@@ -32,27 +36,29 @@ export default async function SupervisorPage() {
         {
           title: "Ringkasan Audit",
           tone: "forest",
+          span: "full",
           metrics: [
-            { label: "Anomali aktif", value: String(counts.activeAnomalies) },
-            { label: "Butuh penjelasan", value: String(counts.needsExplanation) },
-            { label: "Aman", value: String(counts.safeCount) },
-            { label: "Pending approval", value: String(counts.pendingApproval) },
+            { label: "Perubahan masuk audit", value: String(totalAudit) },
+            { label: "Anomali tinggi", value: String(highRiskCount) },
+            { label: "Menunggu approval", value: String(pendingApprovalCount) },
+            { label: "Aman", value: "0" },
           ],
         },
         {
-          title: "Aksi Cepat",
-          actions: [
-            {
-              label: "Lihat Audit Trail",
-              description: "Daftar perubahan pinjaman dengan filter lengkap.",
-              href: "/supervisor/audit",
-            },
-            {
-              label: "Export Laporan",
-              description: "Unduh laporan audit dalam format CSV.",
-              href: "/supervisor/audit",
-            },
-          ],
+          title: "Lihat Audit Trail",
+          description: "Daftar perubahan pinjaman dengan filter lengkap.",
+          cta: {
+            label: "Buka",
+            href: "/supervisor/audit",
+          },
+        },
+        {
+          title: "Export Laporan",
+          description: "Unduh laporan audit dalam format CSV.",
+          cta: {
+            label: "Export",
+            href: "/supervisor/audit",
+          },
         },
         {
           title: "Anomali Terbaru",
