@@ -70,13 +70,39 @@ class FreshnessPipeline:
             )
 
         overlay = self._build_overlay(rgb_image, object_results)
+        mask_overlay = self._build_mask_overlay(mask, rgb_image.size)
         return {
             "commodity": commodity.strip().lower(),
             "summary": aggregate_batch(commodity, probabilities),
             "objects": object_results,
             "overlay_media_type": "image/jpeg",
             "overlay_base64": base64.b64encode(overlay).decode("ascii"),
+            "mask_media_type": "image/png",
+            "mask_base64": base64.b64encode(mask_overlay).decode("ascii"),
         }
+
+    @staticmethod
+    def _build_mask_overlay(
+        mask: np.ndarray,
+        size: tuple[int, int],
+    ) -> bytes:
+        binary = np.asarray(mask, dtype=bool)
+        if binary.shape != (size[1], size[0]):
+            binary = np.asarray(
+                Image.fromarray(binary.astype(np.uint8)).resize(
+                    size,
+                    Image.Resampling.NEAREST,
+                ),
+                dtype=bool,
+            )
+
+        rgba = np.zeros((size[1], size[0], 4), dtype=np.uint8)
+        rgba[..., :3] = (124, 58, 237)
+        rgba[..., 3] = np.where(binary, 150, 0)
+
+        output = BytesIO()
+        Image.fromarray(rgba, mode="RGBA").save(output, format="PNG")
+        return output.getvalue()
 
     @staticmethod
     def _build_overlay(

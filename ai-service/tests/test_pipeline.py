@@ -1,4 +1,5 @@
 from io import BytesIO
+import base64
 
 import numpy as np
 from PIL import Image
@@ -52,6 +53,13 @@ def test_scans_one_photo_and_aggregates_all_detected_objects():
     assert result["objects"][0]["object_id"] == 1
     assert result["overlay_media_type"] == "image/jpeg"
     assert result["overlay_base64"]
+    assert result["mask_media_type"] == "image/png"
+
+    mask = Image.open(BytesIO(base64.b64decode(result["mask_base64"])))
+    assert mask.mode == "RGBA"
+    assert mask.size == image.size
+    assert mask.getpixel((5, 5)) == (124, 58, 237, 150)
+    assert mask.getpixel((0, 0)) == (124, 58, 237, 0)
 
 
 def test_pipeline_rejects_photo_without_detected_produce():
