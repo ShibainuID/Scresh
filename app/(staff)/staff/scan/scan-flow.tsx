@@ -12,8 +12,11 @@ import {
   ScanLine,
 } from "lucide-react";
 import { scanFreshnessAction } from "@/app/actions/scresh";
-import { BarcodeDisplay } from "@/components/barcode-display";
-import type { ScreshBatchRow } from "@/lib/server/repositories/scresh-batch-repository";
+import {
+  getAiCommodityKey,
+  SCAN_DRAFT_STORAGE_KEY,
+  serializeScanDraft,
+} from "./scan-draft";
 import {
   getScanErrorMessage,
   parseScanResult,
@@ -36,7 +39,15 @@ const gradeStyles: Record<string, { label: string; color: string }> = {
   D: { label: "Prioritas tinggi", color: "text-red-600" },
 };
 
-type Phase = "camera" | "analyzing" | "result" | "select";
+type Phase = "camera" | "analyzing" | "result";
+
+type ScanFlowProps = {
+  targetBatch?: {
+    id: string;
+    code: string;
+    commodity: string;
+  };
+};
 
 async function captureFrame(video: HTMLVideoElement): Promise<File> {
   const canvas = document.createElement("canvas");
@@ -58,18 +69,18 @@ async function captureFrame(video: HTMLVideoElement): Promise<File> {
   });
 }
 
-export function ScanFlow({ batches }: { batches: ScreshBatchRow[] }) {
+export function ScanFlow({ targetBatch }: ScanFlowProps) {
   const router = useRouter();
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const previewUrlRef = useRef<string | null>(null);
   const [cameraError, setCameraError] = useState(false);
   const [phase, setPhase] = useState<Phase>("camera");
-  const [commodity, setCommodity] = useState("chili");
+  const [commodity, setCommodity] = useState(
+    getAiCommodityKey(targetBatch?.commodity ?? "chili"),
+  );
   const [result, setResult] = useState<ScanResult | null>(null);
   const [previewUrl, setPreviewUrl] = useState("");
-  const [barcodeValue, setBarcodeValue] = useState("");
-  const [selectedBatchId, setSelectedBatchId] = useState("");
   const [isPending, startTransition] = useTransition();
 
   useEffect(() => {
@@ -124,7 +135,6 @@ export function ScanFlow({ batches }: { batches: ScreshBatchRow[] }) {
 
       const parsed = parseScanResult(payload);
       setResult(parsed);
-      setBarcodeValue(`SCRESH-${Date.now().toString().slice(-8)}`);
       setPhase("result");
     } catch (error) {
       const message =
@@ -149,13 +159,24 @@ export function ScanFlow({ batches }: { batches: ScreshBatchRow[] }) {
   }
 
   async function handleSave() {
-    if (!result || !selectedBatchId) {
-      toast.error("Pilih batch tujuan penyimpanan.");
+    if (!result) return;
+
+    if (!targetBatch) {
+      sessionStorage.setItem(
+        SCAN_DRAFT_STORAGE_KEY,
+        serializeScanDraft({
+          commodity: result.commodity,
+          grade: result.summary.grade,
+          confidencePercent: result.summary.confidencePercent,
+          shelfLifeDays: result.summary.shelfLifeDays,
+        }),
+      );
+      router.push("/staff/batches/new?from=scan");
       return;
     }
 
     const formData = new FormData();
-    formData.append("batchId", selectedBatchId);
+    formData.append("batchId", targetBatch.id);
     formData.append("grade", result.summary.grade);
     formData.append(
       "confidenceScore",
@@ -173,7 +194,7 @@ export function ScanFlow({ batches }: { batches: ScreshBatchRow[] }) {
         return;
       }
       toast.success("ScreshTag berhasil disimpan.");
-      router.push(`/staff/batches/${selectedBatchId}/tag`);
+      router.push(`/staff/batches/${targetBatch.id}/tag`);
     });
   }
 
@@ -181,7 +202,7 @@ export function ScanFlow({ batches }: { batches: ScreshBatchRow[] }) {
     ? gradeStyles[result.summary.grade]
     : gradeStyles.A;
   const resultVisible = Boolean(
-    result && (phase === "result" || phase === "select"),
+    result && phase === "result",
   );
 
   return (
@@ -272,6 +293,7 @@ export function ScanFlow({ batches }: { batches: ScreshBatchRow[] }) {
               Komoditas
               <select
                 className="h-12 rounded-[14px] bg-surface px-4 text-base text-forest outline-none ring-1 ring-forest/15 focus:ring-2 focus:ring-violet-600"
+                disabled={Boolean(targetBatch)}
                 onChange={(event) => setCommodity(event.target.value)}
                 value={commodity}
               >
@@ -327,7 +349,7 @@ export function ScanFlow({ batches }: { batches: ScreshBatchRow[] }) {
           }`}
         >
           <div className="mx-auto mb-5 h-1.5 w-12 rounded-full bg-forest/20" />
-          {result && phase === "result" ? (
+          {result ? (
             <>
               <div className="flex items-start justify-between gap-4">
                 <div>
@@ -380,63 +402,16 @@ export function ScanFlow({ batches }: { batches: ScreshBatchRow[] }) {
 
               <button
                 className="mt-5 h-12 w-full rounded-[10px] bg-forest text-sm font-bold text-white"
-                onClick={() => setPhase("select")}
+                disabled={isPending}
+                onClick={handleSave}
                 type="button"
               >
-                Konfirmasi hasil
+                {isPending
+                  ? "Menyimpan..."
+                  : targetBatch
+                    ? `Simpan ke ${targetBatch.code}`
+                    : "Simpan Batch"}
               </button>
-            </>
-          ) : null}
-
-          {result && phase === "select" ? (
-            <>
-              <p className="font-sans text-lg font-semibold">
-                Konfirmasi penyimpanan
-              </p>
-              <p className="mt-1 text-sm text-forest/70">
-                Scan Grade {result.summary.grade} akan disimpan ke batch yang
-                dipilih.
-              </p>
-              <label className="mt-5 grid gap-2 text-sm font-semibold">
-                Batch tujuan
-                <select
-                  className="h-11 w-full border-0 border-b border-forest/15 bg-transparent px-0 text-base font-medium text-forest outline-none focus:border-forest"
-                  onChange={(event) =>
-                    setSelectedBatchId(event.target.value)
-                  }
-                  value={selectedBatchId}
-                >
-                  <option value="">Pilih batch</option>
-                  {batches.map((batch) => (
-                    <option key={batch.id} value={batch.id}>
-                      {batch.batch_code} - {batch.commodity}
-                    </option>
-                  ))}
-                </select>
-              </label>
-
-              <div className="mt-6 rounded-[16px] bg-lime p-4">
-                <div className="overflow-hidden rounded-[8px] px-2 py-3">
-                  {barcodeValue ? (
-                    <BarcodeDisplay value={barcodeValue} />
-                  ) : null}
-                </div>
-                <button
-                  className="mt-3 h-12 w-full rounded-[10px] bg-forest text-sm font-bold text-white disabled:opacity-60"
-                  disabled={isPending || !selectedBatchId}
-                  onClick={handleSave}
-                  type="button"
-                >
-                  {isPending ? "Menyimpan..." : "Simpan Scresh Tag"}
-                </button>
-                <button
-                  className="mt-2 h-12 w-full rounded-[10px] bg-white text-sm font-bold text-forest"
-                  onClick={() => setPhase("result")}
-                  type="button"
-                >
-                  Kembali
-                </button>
-              </div>
             </>
           ) : null}
         </div>

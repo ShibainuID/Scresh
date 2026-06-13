@@ -7,6 +7,30 @@ export type ScanDraft = {
   shelfLifeDays: number;
 };
 
+const commodityLabels: Record<string, string> = {
+  chili: "Cabai Merah",
+  lettuce: "Selada",
+  onion: "Bawang",
+  potato: "Kentang",
+  tomato: "Tomat",
+};
+
+const commodityKeys = Object.fromEntries(
+  Object.entries(commodityLabels).map(([key, label]) => [
+    label.toLowerCase(),
+    key,
+  ]),
+);
+
+export function getDraftCommodityLabel(commodity: string) {
+  return commodityLabels[commodity] ?? commodity;
+}
+
+export function getAiCommodityKey(commodity: string) {
+  const normalized = commodity.trim().toLowerCase();
+  return commodityKeys[normalized] ?? normalized;
+}
+
 export function serializeScanDraft(draft: ScanDraft) {
   return JSON.stringify(draft);
 }

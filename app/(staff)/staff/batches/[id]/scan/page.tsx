@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { requireRole } from "@/lib/auth/dal";
 import { services } from "@/lib/server/services/container";
-import { CameraScanner } from "./camera-scanner";
+import { ScanFlow } from "../../../scan/scan-flow";
 
 type Props = {
   params: Promise<{ id: string }>;
@@ -26,10 +26,12 @@ export default async function ScanPage({ params }: Props) {
   }
 
   return (
-    <CameraScanner
-      batchCode={batch.batch_code}
-      batchId={batch.id}
-      commodity={batch.commodity}
+    <ScanFlow
+      targetBatch={{
+        id: batch.id,
+        code: batch.batch_code,
+        commodity: batch.commodity,
+      }}
     />
   );
 }
