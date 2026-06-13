@@ -1,5 +1,4 @@
 import { requireRole } from "@/lib/auth/dal";
-import { services } from "@/lib/server/services/container";
 import { ScanFlow } from "./scan-flow";
 
 export default async function ScanPage() {
@@ -13,7 +12,5 @@ export default async function ScanPage() {
     );
   }
 
-  const batches = await services.scresh.listBatches(session.user.tenantId);
-
-  return <ScanFlow batches={batches} />;
+  return <ScanFlow />;
 }

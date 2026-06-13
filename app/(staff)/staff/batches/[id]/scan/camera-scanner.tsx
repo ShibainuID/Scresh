@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { ArrowLeft, CameraOff } from "lucide-react";
 import { scanFreshnessAction } from "@/app/actions/scresh";
+import { getColdStorageShelfLifeDays, type Grade } from "@/app/(staff)/staff/scan/scan-result";
 import { BarcodeDisplay } from "@/components/barcode-display";
 
 const gradeOptions: Record<
@@ -31,7 +32,7 @@ type CameraScannerProps = {
 export function CameraScanner({ batchId, batchCode, commodity }: CameraScannerProps) {
   const router = useRouter();
   const videoRef = useRef<HTMLVideoElement>(null);
-  const [stream, setStream] = useState<MediaStream | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
   const [cameraError, setCameraError] = useState(false);
   const [phase, setPhase] = useState<"scanning" | "result">("scanning");
   const [grade, setGrade] = useState("A");
@@ -44,7 +45,7 @@ export function CameraScanner({ batchId, batchCode, commodity }: CameraScannerPr
         const mediaStream = await navigator.mediaDevices.getUserMedia({
           video: { facingMode: "environment" },
         });
-        setStream(mediaStream);
+        streamRef.current = mediaStream;
         if (videoRef.current) {
           videoRef.current.srcObject = mediaStream;
         }
@@ -56,12 +57,12 @@ export function CameraScanner({ batchId, batchCode, commodity }: CameraScannerPr
     startCamera();
 
     return () => {
-      stream?.getTracks().forEach((track) => track.stop());
+      streamRef.current?.getTracks().forEach((track) => track.stop());
     };
   }, []);
 
   useEffect(() => {
-    if (cameraError || !stream) return;
+    if (cameraError || !streamRef.current) return;
 
     const simulatedGrade = getSimulatedGrade();
     setGrade(simulatedGrade);
@@ -72,15 +73,18 @@ export function CameraScanner({ batchId, batchCode, commodity }: CameraScannerPr
     }, 2500);
 
     return () => window.clearTimeout(timer);
-  }, [cameraError, stream, batchCode]);
+  }, [cameraError, batchCode]);
 
   async function handleSave() {
     const option = gradeOptions[grade];
+    const shelfLifeDays =
+      getColdStorageShelfLifeDays(commodity, grade as Grade) ??
+      option.shelfLifeDays;
     const formData = new FormData();
     formData.append("batchId", batchId);
     formData.append("grade", grade);
     formData.append("confidenceScore", String(option.confidence));
-    formData.append("shelfLifeHours", String(option.shelfLifeDays * 24));
+    formData.append("shelfLifeHours", String(shelfLifeDays * 24));
 
     startTransition(async () => {
       const result = await scanFreshnessAction({}, formData);
@@ -91,10 +95,14 @@ export function CameraScanner({ batchId, batchCode, commodity }: CameraScannerPr
       }
 
       toast.success("ScreshTag berhasil disimpan.");
+      router.push(`/staff/batches/${batchId}/tag`);
     });
   }
 
   const option = gradeOptions[grade];
+  const shelfLifeDays =
+    getColdStorageShelfLifeDays(commodity, grade as Grade) ??
+    option.shelfLifeDays;
 
   return (
     <main className="fixed inset-0 z-40 overflow-hidden bg-black">
@@ -170,7 +178,7 @@ export function CameraScanner({ batchId, batchCode, commodity }: CameraScannerPr
             <div className="mt-6">
               <p className="text-sm text-forest/70">Perkiraan umur simpan</p>
               <p className="font-sans text-4xl font-semibold">
-                {option.shelfLifeDays}{" "}
+                {shelfLifeDays}{" "}
                 <span className="text-xl font-medium text-forest/70">hari</span>
               </p>
             </div>

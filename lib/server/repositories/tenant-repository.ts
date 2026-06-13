@@ -88,6 +88,39 @@ export class TenantRepository {
     return result.rows[0].id;
   }
 
+  async listAll(): Promise<TenantSummary[]> {
+    const result = await this.db.query<TenantRow>(
+      `select
+        id,
+        name,
+        slug,
+        legal_name,
+        registration_number,
+        address,
+        city,
+        province,
+        contact_phone,
+        commodity_focus,
+        verification_status
+      from tenants
+      order by name asc`,
+    );
+
+    return result.rows.map((row) => ({
+      id: row.id,
+      name: row.name,
+      slug: row.slug,
+      legalName: row.legal_name,
+      registrationNumber: row.registration_number,
+      address: row.address,
+      city: row.city,
+      province: row.province,
+      contactPhone: row.contact_phone,
+      commodityFocus: row.commodity_focus,
+      verificationStatus: row.verification_status,
+    }));
+  }
+
   async searchByName(query: string, limit = 6): Promise<TenantSummary[]> {
     const trimmedQuery = query.trim();
 

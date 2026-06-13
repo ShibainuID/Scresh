@@ -51,9 +51,13 @@ export class ScreshBatchRepository {
       insert into scresh_batches (
         tenant_id, registered_by_user_id, batch_code, commodity, supplier_name,
         claimed_weight_kg, actual_weight_kg, remaining_weight_kg, buy_price_per_kg,
-        sample_photo_url, storage_location, status
+        sample_photo_url, storage_location,
+        freshness_grade, confidence_score, shelf_life_hours, distribution_priority, status
       )
-      values ($1, $2, $3, $4, $5, $6, $7, $7, $8, $9, $10, 'in_storage')
+      values (
+        $1, $2, $3, $4, $5, $6, $7, $7, $8, $9, $10,
+        'pending', 0, 0, 99, 'pending_scan'
+      )
       returning *
       `,
       [

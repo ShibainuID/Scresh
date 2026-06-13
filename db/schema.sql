@@ -189,6 +189,51 @@ create table if not exists audit_anomalies (
   created_at timestamptz not null default now()
 );
 
+create table if not exists notifications (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references users(id) on delete cascade,
+  type text not null,
+  title text not null,
+  message text not null,
+  resource_type text,
+  resource_id text,
+  is_read boolean not null default false,
+  created_at timestamptz not null default now()
+);
+
+create table if not exists audit_reviews (
+  id uuid primary key default gen_random_uuid(),
+  loan_id uuid not null references loans(id) on delete cascade,
+  reviewer_user_id uuid not null references users(id) on delete cascade,
+  status text not null,
+  note text,
+  created_at timestamptz not null default now()
+);
+
+create table if not exists member_consents (
+  id uuid primary key default gen_random_uuid(),
+  member_id uuid not null references members(id) on delete cascade,
+  tenant_id uuid not null references tenants(id) on delete cascade,
+  purpose text not null default 'credit_summary',
+  granted boolean not null default false,
+  granted_at timestamptz,
+  expires_at timestamptz,
+  created_at timestamptz not null default now(),
+  unique (member_id, tenant_id, purpose)
+);
+
+create table if not exists credit_summaries (
+  id uuid primary key default gen_random_uuid(),
+  member_id uuid not null references members(id) on delete cascade,
+  tenant_id uuid not null references tenants(id) on delete cascade,
+  active_arrears_count integer not null default 0,
+  running_loan_count integer not null default 0,
+  on_time_ratio numeric(5,2) not null default 0,
+  risk_tier text not null default 'medium',
+  last_updated timestamptz not null default now(),
+  unique (member_id, tenant_id)
+);
+
 create table if not exists sessions (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references users(id) on delete cascade,
@@ -216,6 +261,12 @@ create index if not exists scresh_batches_tenant_id_idx on scresh_batches(tenant
 create index if not exists scresh_movements_batch_id_idx on scresh_movements(batch_id);
 create index if not exists partner_portfolio_reports_tenant_id_idx on partner_portfolio_reports(tenant_id);
 create index if not exists audit_anomalies_tenant_id_idx on audit_anomalies(tenant_id);
+create unique index if not exists audit_anomalies_tenant_loan_unique_idx
+  on audit_anomalies (tenant_id, loan_id);
+create index if not exists notifications_user_id_read_idx on notifications(user_id, is_read, created_at desc);
+create index if not exists audit_reviews_loan_id_idx on audit_reviews(loan_id);
+create index if not exists member_consents_member_idx on member_consents(member_id, tenant_id, purpose);
+create index if not exists credit_summaries_member_idx on credit_summaries(member_id, tenant_id);
 create index if not exists sessions_user_id_idx on sessions(user_id);
 create index if not exists sessions_active_idx on sessions(id, expires_at) where revoked_at is null;
 create index if not exists audit_logs_actor_created_idx on audit_logs(actor_user_id, created_at desc);
