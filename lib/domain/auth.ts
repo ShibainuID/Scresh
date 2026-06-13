@@ -2,6 +2,21 @@ export const roles = ["staff", "manager", "supervisor", "partner", "admin"] as c
 
 export type Role = (typeof roles)[number];
 
+export function normalizeRoles(value: unknown): Role[] {
+  const roleValues = Array.isArray(value)
+    ? value
+    : typeof value === "string"
+      ? value
+          .replace(/^\{|\}$/g, "")
+          .split(",")
+          .map((role) => role.trim().replace(/^"|"$/g, ""))
+      : [];
+
+  return roleValues.filter((role): role is Role =>
+    roles.includes(role as Role),
+  );
+}
+
 export type UserPrincipal = {
   id: string;
   tenantId: string | null;

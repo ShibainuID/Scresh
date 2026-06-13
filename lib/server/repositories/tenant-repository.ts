@@ -17,8 +17,13 @@ export type TenantSummary = {
   id: string;
   name: string;
   slug: string;
+  legalName: string | null;
+  registrationNumber: string | null;
+  address: string | null;
   city: string | null;
   province: string | null;
+  contactPhone: string | null;
+  commodityFocus: string | null;
   verificationStatus: string;
 };
 
@@ -26,8 +31,13 @@ type TenantRow = {
   id: string;
   name: string;
   slug: string;
+  legal_name: string | null;
+  registration_number: string | null;
+  address: string | null;
   city: string | null;
   province: string | null;
+  contact_phone: string | null;
+  commodity_focus: string | null;
   verification_status: string;
 };
 
@@ -87,7 +97,18 @@ export class TenantRepository {
 
     const result = await this.db.query<TenantRow>(
       `
-      select id, name, slug, city, province, verification_status
+      select
+        id,
+        name,
+        slug,
+        legal_name,
+        registration_number,
+        address,
+        city,
+        province,
+        contact_phone,
+        commodity_focus,
+        verification_status
       from tenants
       where name ilike $1
       order by
@@ -102,8 +123,13 @@ export class TenantRepository {
       id: row.id,
       name: row.name,
       slug: row.slug,
+      legalName: row.legal_name,
+      registrationNumber: row.registration_number,
+      address: row.address,
       city: row.city,
       province: row.province,
+      contactPhone: row.contact_phone,
+      commodityFocus: row.commodity_focus,
       verificationStatus: row.verification_status,
     }));
   }

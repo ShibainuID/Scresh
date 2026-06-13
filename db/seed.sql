@@ -20,9 +20,9 @@ with seeded_tenants as (
   )
   values
     (
-      'Koperasi Tani Maju',
-      'koperasi-tani-maju',
-      'Koperasi Produsen Tani Maju Sejahtera',
+      'Koperasi Melati Jaya',
+      'koperasi-melati-jaya',
+      'Koperasi Produsen Melati Jaya Sejahtera',
       'BH-3273-2024-001',
       'Jl. Pasar Induk No. 12',
       'Bandung',
@@ -70,7 +70,7 @@ insert into tenant_modules (tenant_id, module_id, status)
 select t.id, m.id, 'active'
 from tenants t
 join modules m on m.code in ('central-core', 'scresh', 'partner-portfolio')
-where t.slug in ('koperasi-tani-maju', 'koperasi-sayur-segar-lembang')
+where t.slug in ('koperasi-melati-jaya', 'koperasi-sayur-segar-lembang')
 on conflict (tenant_id, module_id) do update
 set status = excluded.status;
 
@@ -79,12 +79,12 @@ select t.id, user_seed.name, user_seed.email, user_seed.password_hash, true
 from tenants t
 join (
   values
-    ('koperasi-tani-maju', 'Siti Rahma', 'staff@scresh.test', '$2b$12$e46NpGbVjpmmJ4EnovXS1eTMHEbfLbl00nu4olHPyPbYyRUr/nilq'),
-    ('koperasi-tani-maju', 'Budi Santoso', 'manager@scresh.test', '$2b$12$e46NpGbVjpmmJ4EnovXS1eTMHEbfLbl00nu4olHPyPbYyRUr/nilq'),
-    ('koperasi-tani-maju', 'Dina Audit Dinas', 'supervisor@scresh.test', '$2b$12$e46NpGbVjpmmJ4EnovXS1eTMHEbfLbl00nu4olHPyPbYyRUr/nilq'),
-    ('koperasi-tani-maju', 'Raka KUR Bank', 'partner@scresh.test', '$2b$12$e46NpGbVjpmmJ4EnovXS1eTMHEbfLbl00nu4olHPyPbYyRUr/nilq'),
-    ('koperasi-tani-maju', 'Admin Platform', 'admin@scresh.test', '$2b$12$e46NpGbVjpmmJ4EnovXS1eTMHEbfLbl00nu4olHPyPbYyRUr/nilq'),
-    ('koperasi-sayur-segar-lembang', 'Petugas Lembang', 'staff.lembang@scresh.test', '$2b$12$e46NpGbVjpmmJ4EnovXS1eTMHEbfLbl00nu4olHPyPbYyRUr/nilq')
+    ('koperasi-melati-jaya', 'Siti Rahma', 'siti.melati@koperasi.id', '$2b$12$e46NpGbVjpmmJ4EnovXS1eTMHEbfLbl00nu4olHPyPbYyRUr/nilq'),
+    ('koperasi-melati-jaya', 'Budi Santoso', 'budi.melati@koperasi.id', '$2b$12$e46NpGbVjpmmJ4EnovXS1eTMHEbfLbl00nu4olHPyPbYyRUr/nilq'),
+    ('koperasi-melati-jaya', 'Dina Audit Dinas', 'dina.supervisor@koperasi.id', '$2b$12$e46NpGbVjpmmJ4EnovXS1eTMHEbfLbl00nu4olHPyPbYyRUr/nilq'),
+    ('koperasi-melati-jaya', 'Raka KUR Bank', 'raka.partner@koperasi.id', '$2b$12$e46NpGbVjpmmJ4EnovXS1eTMHEbfLbl00nu4olHPyPbYyRUr/nilq'),
+    ('koperasi-melati-jaya', 'Admin Platform', 'admin.melati@koperasi.id', '$2b$12$e46NpGbVjpmmJ4EnovXS1eTMHEbfLbl00nu4olHPyPbYyRUr/nilq'),
+    ('koperasi-sayur-segar-lembang', 'Petugas Lembang', 'petugas.lembang@koperasi.id', '$2b$12$e46NpGbVjpmmJ4EnovXS1eTMHEbfLbl00nu4olHPyPbYyRUr/nilq')
 ) as user_seed(tenant_slug, name, email, password_hash)
   on user_seed.tenant_slug = t.slug
 on conflict (email) do update
@@ -95,12 +95,12 @@ select u.id, role_seed.role::app_role
 from users u
 join (
   values
-    ('staff@scresh.test', 'staff'),
-    ('manager@scresh.test', 'manager'),
-    ('supervisor@scresh.test', 'supervisor'),
-    ('partner@scresh.test', 'partner'),
-    ('admin@scresh.test', 'admin'),
-    ('staff.lembang@scresh.test', 'staff')
+    ('siti.melati@koperasi.id', 'staff'),
+    ('budi.melati@koperasi.id', 'manager'),
+    ('dina.supervisor@koperasi.id', 'supervisor'),
+    ('raka.partner@koperasi.id', 'partner'),
+    ('admin.melati@koperasi.id', 'admin'),
+    ('petugas.lembang@koperasi.id', 'staff')
 ) as role_seed(email, role)
   on role_seed.email = u.email
 on conflict (user_id, role) do nothing;
@@ -110,8 +110,8 @@ select t.id, member_seed.full_name, member_seed.national_id, member_seed.phone, 
 from tenants t
 join (
   values
-    ('koperasi-tani-maju', 'Pak Maman Supplier Cabai', '3273010101800001', '081111111111', 'Cabai merah'),
-    ('koperasi-tani-maju', 'Bu Rina Supplier Tomat', '3273014102850002', '082222222222', 'Tomat'),
+    ('koperasi-melati-jaya', 'Pak Maman Supplier Cabai', '3273010101800001', '081111111111', 'Cabai merah'),
+    ('koperasi-melati-jaya', 'Bu Rina Supplier Tomat', '3273014102850002', '082222222222', 'Tomat'),
     ('koperasi-sayur-segar-lembang', 'Pak Asep Supplier Selada', '3204011201780003', '083333333333', 'Selada')
 ) as member_seed(tenant_slug, full_name, national_id, phone, commodity_focus)
   on member_seed.tenant_slug = t.slug
@@ -144,12 +144,12 @@ select
   loan_seed.approved_at::timestamptz
 from tenants t
 join members m on m.tenant_id = t.id
-join users staff on staff.email = 'staff@scresh.test'
-join users manager on manager.email = 'manager@scresh.test'
+join users staff on staff.email = 'siti.melati@koperasi.id'
+join users manager on manager.email = 'budi.melati@koperasi.id'
 join (
   values
-    ('koperasi-tani-maju', 'Pak Maman Supplier Cabai', 'L-KTM-202606-001', 15000000.00, 'Modal kerja pembelian cabai dari petani anggota', 'medium', 'approved', '2026-06-12 09:10:00+07'),
-    ('koperasi-tani-maju', 'Bu Rina Supplier Tomat', 'L-KTM-202606-002', 5000000.00, 'Dana transport distribusi tomat ke offtaker', 'low', 'pending_review', null)
+    ('koperasi-melati-jaya', 'Pak Maman Supplier Cabai', 'L-KMJ-202606-001', 15000000.00, 'Modal kerja pembelian cabai dari petani anggota', 'medium', 'approved', '2026-06-12 09:10:00+07'),
+    ('koperasi-melati-jaya', 'Bu Rina Supplier Tomat', 'L-KMJ-202606-002', 5000000.00, 'Dana transport distribusi tomat ke offtaker', 'low', 'pending_review', null)
 ) as loan_seed(tenant_slug, member_name, loan_number, principal_amount, purpose, risk_tier, status, approved_at)
   on loan_seed.tenant_slug = t.slug and loan_seed.member_name = m.full_name
 on conflict (loan_number) do update
@@ -167,9 +167,9 @@ select l.id, version_seed.version_number, version_seed.principal_amount, version
 from loans l
 join (
   values
-    ('L-KTM-202606-001', 1, 5000000.00, 'Pengajuan awal staff dari data kebutuhan anggota', 'staff@scresh.test', '2026-06-12 08:20:00+07'),
-    ('L-KTM-202606-001', 2, 15000000.00, 'Nilai transaksi pinjaman dinaikkan setelah verifikasi stok dan kontrak offtaker', 'manager@scresh.test', '2026-06-12 09:10:00+07'),
-    ('L-KTM-202606-002', 1, 5000000.00, 'Pengajuan awal transport distribusi', 'staff@scresh.test', '2026-06-12 10:00:00+07')
+    ('L-KMJ-202606-001', 1, 5000000.00, 'Pengajuan awal staff dari data kebutuhan anggota', 'siti.melati@koperasi.id', '2026-06-12 08:20:00+07'),
+    ('L-KMJ-202606-001', 2, 15000000.00, 'Nilai transaksi pinjaman dinaikkan setelah verifikasi stok dan kontrak offtaker', 'budi.melati@koperasi.id', '2026-06-12 09:10:00+07'),
+    ('L-KMJ-202606-002', 1, 5000000.00, 'Pengajuan awal transport distribusi', 'siti.melati@koperasi.id', '2026-06-12 10:00:00+07')
 ) as version_seed(loan_number, version_number, principal_amount, change_reason, email, created_at)
   on version_seed.loan_number = l.loan_number
 join users u on u.email = version_seed.email
@@ -200,9 +200,9 @@ select
   '2026-06-12 09:08:00+07'::timestamptz,
   '2026-06-12 08:55:00+07'::timestamptz
 from loans l
-join users staff on staff.email = 'staff@scresh.test'
-join users manager on manager.email = 'manager@scresh.test'
-where l.loan_number = 'L-KTM-202606-001'
+join users staff on staff.email = 'siti.melati@koperasi.id'
+join users manager on manager.email = 'budi.melati@koperasi.id'
+where l.loan_number = 'L-KMJ-202606-001'
   and not exists (
     select 1 from loan_change_requests lcr
     where lcr.loan_id = l.id and lcr.field_name = 'principal_amount' and lcr.new_value = '15000000'
@@ -240,11 +240,11 @@ select
   batch_seed.status,
   batch_seed.created_at::timestamptz
 from tenants t
-join users staff on staff.email = 'staff@scresh.test'
+join users staff on staff.email = 'siti.melati@koperasi.id'
 join (
   values
-    ('koperasi-tani-maju', 'KTM-CBI-20260612-001', 'Cabai Merah', 'Pak Maman Supplier Cabai', 3000.00, 2920.00, 'A', 92.50, 120, 'Cold Room A-01', 2, 'in_storage', '2026-06-12 07:40:00+07'),
-    ('koperasi-tani-maju', 'KTM-TMT-20260612-002', 'Tomat', 'Bu Rina Supplier Tomat', 1800.00, 1690.00, 'C', 87.20, 18, 'Cold Room B-03', 1, 'priority_distribution', '2026-06-12 08:15:00+07')
+    ('koperasi-melati-jaya', 'KMJ-CBI-20260612-001', 'Cabai Merah', 'Pak Maman Supplier Cabai', 3000.00, 2920.00, 'A', 92.50, 120, 'Cold Room A-01', 2, 'in_storage', '2026-06-12 07:40:00+07'),
+    ('koperasi-melati-jaya', 'KMJ-TMT-20260612-002', 'Tomat', 'Bu Rina Supplier Tomat', 1800.00, 1690.00, 'C', 87.20, 18, 'Cold Room B-03', 1, 'priority_distribution', '2026-06-12 08:15:00+07')
 ) as batch_seed(tenant_slug, batch_code, commodity, supplier_name, claimed_weight_kg, actual_weight_kg, freshness_grade, confidence_score, shelf_life_hours, storage_location, distribution_priority, status, created_at)
   on batch_seed.tenant_slug = t.slug
 on conflict (batch_code) do update
@@ -260,11 +260,11 @@ set
 insert into scresh_movements (batch_id, moved_by_user_id, movement_type, quantity_kg, destination, notes, created_at)
 select b.id, staff.id, movement_seed.movement_type, movement_seed.quantity_kg, movement_seed.destination, movement_seed.notes, movement_seed.created_at::timestamptz
 from scresh_batches b
-join users staff on staff.email = 'staff@scresh.test'
+join users staff on staff.email = 'siti.melati@koperasi.id'
 join (
   values
-    ('KTM-CBI-20260612-001', 'outbound', 800.00, 'Pasar Mitra Ciroyom', 'Distribusi normal berdasarkan FIFO.', '2026-06-12 11:30:00+07'),
-    ('KTM-TMT-20260612-002', 'outbound', 1200.00, 'Offtaker Resto Bandung', 'Prioritas keluar karena Grade C dan shelf life 18 jam.', '2026-06-12 12:10:00+07')
+    ('KMJ-CBI-20260612-001', 'outbound', 800.00, 'Pasar Mitra Ciroyom', 'Distribusi normal berdasarkan FIFO.', '2026-06-12 11:30:00+07'),
+    ('KMJ-TMT-20260612-002', 'outbound', 1200.00, 'Offtaker Resto Bandung', 'Prioritas keluar karena Grade C dan shelf life 18 jam.', '2026-06-12 12:10:00+07')
 ) as movement_seed(batch_code, movement_type, quantity_kg, destination, notes, created_at)
   on movement_seed.batch_code = b.batch_code
 where not exists (
@@ -292,8 +292,8 @@ select
   86,
   'low'
 from tenants t
-join users partner on partner.email = 'partner@scresh.test'
-where t.slug = 'koperasi-tani-maju'
+join users partner on partner.email = 'raka.partner@koperasi.id'
+where t.slug = 'koperasi-melati-jaya'
 on conflict (tenant_id, partner_user_id, report_month) do update
 set
   active_stock_value = excluded.active_stock_value,
@@ -311,7 +311,7 @@ select
   'open',
   '2026-06-12 09:12:00+07'::timestamptz
 from loans l
-where l.loan_number = 'L-KTM-202606-001'
+where l.loan_number = 'L-KMJ-202606-001'
   and not exists (
     select 1 from audit_anomalies aa where aa.loan_id = l.id and aa.reason like 'Nilai pinjaman naik 200%'
   );
@@ -320,12 +320,12 @@ insert into audit_logs (actor_user_id, action, resource_type, resource_id, metad
 select actor.id, audit_seed.action, audit_seed.resource_type, audit_seed.resource_id, audit_seed.metadata::jsonb, audit_seed.created_at::timestamptz
 from (
   values
-    ('staff@scresh.test', 'scresh.batch.registered', 'batch', 'KTM-CBI-20260612-001', '{"useCase":"Petugas koperasi melacak batch masuk tanpa laporan manual","claimedWeightKg":3000,"actualWeightKg":2920}'::text, '2026-06-12 07:40:00+07'),
-    ('staff@scresh.test', 'scresh.movement.outbound', 'batch', 'KTM-TMT-20260612-002', '{"useCase":"Distribusi keluar prioritas untuk menurunkan waste","destination":"Offtaker Resto Bandung","quantityKg":1200}'::text, '2026-06-12 12:10:00+07'),
-    ('staff@scresh.test', 'loan.change_requested', 'loan', 'L-KTM-202606-001', '{"field":"principal_amount","oldValue":"5000000","newValue":"15000000","requiresManagerApproval":true}'::text, '2026-06-12 08:55:00+07'),
-    ('manager@scresh.test', 'loan.change_approved', 'loan', 'L-KTM-202606-001', '{"field":"principal_amount","approvedByRole":"manager","oldValue":"5000000","newValue":"15000000"}'::text, '2026-06-12 09:08:00+07'),
-    ('supervisor@scresh.test', 'audit.anomaly_viewed', 'loan', 'L-KTM-202606-001', '{"useCase":"Auditor mendapat visibilitas pinjaman real-time tanpa laporan bulanan","riskScore":95}'::text, '2026-06-12 09:20:00+07'),
-    ('partner@scresh.test', 'partner.portfolio_viewed', 'tenant', 'koperasi-tani-maju', '{"useCase":"Bank/KUR menilai koperasi dari data operasional nyata","wasteRatePercent":3.8,"supplierStabilityScore":86}'::text, '2026-06-12 13:00:00+07')
+    ('siti.melati@koperasi.id', 'scresh.batch.registered', 'batch', 'KMJ-CBI-20260612-001', '{"useCase":"Petugas koperasi melacak batch masuk tanpa laporan manual","claimedWeightKg":3000,"actualWeightKg":2920}'::text, '2026-06-12 07:40:00+07'),
+    ('siti.melati@koperasi.id', 'scresh.movement.outbound', 'batch', 'KMJ-TMT-20260612-002', '{"useCase":"Distribusi keluar prioritas untuk menurunkan waste","destination":"Offtaker Resto Bandung","quantityKg":1200}'::text, '2026-06-12 12:10:00+07'),
+    ('siti.melati@koperasi.id', 'loan.change_requested', 'loan', 'L-KMJ-202606-001', '{"field":"principal_amount","oldValue":"5000000","newValue":"15000000","requiresManagerApproval":true}'::text, '2026-06-12 08:55:00+07'),
+    ('budi.melati@koperasi.id', 'loan.change_approved', 'loan', 'L-KMJ-202606-001', '{"field":"principal_amount","approvedByRole":"manager","oldValue":"5000000","newValue":"15000000"}'::text, '2026-06-12 09:08:00+07'),
+    ('dina.supervisor@koperasi.id', 'audit.anomaly_viewed', 'loan', 'L-KMJ-202606-001', '{"useCase":"Auditor mendapat visibilitas pinjaman real-time tanpa laporan bulanan","riskScore":95}'::text, '2026-06-12 09:20:00+07'),
+    ('raka.partner@koperasi.id', 'partner.portfolio_viewed', 'tenant', 'koperasi-melati-jaya', '{"useCase":"Bank/KUR menilai koperasi dari data operasional nyata","wasteRatePercent":3.8,"supplierStabilityScore":86}'::text, '2026-06-12 13:00:00+07')
 ) as audit_seed(email, action, resource_type, resource_id, metadata, created_at)
 join users actor on actor.email = audit_seed.email
 where not exists (

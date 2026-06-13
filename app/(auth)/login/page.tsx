@@ -43,14 +43,14 @@ export default function LoginPage() {
             description="Gunakan akun koperasi yang sudah terdaftar."
             action={loginAction}
             autofillPresets={[
-              { email: "staff@scresh.test", password: "Password123" },
+              { email: "siti.melati@koperasi.id", password: "Password123" },
             ]}
             autofillMemoryMode="login"
             autofillShortcuts={{
-              p: { email: "staff@scresh.test", password: "Password123" },
-              m: { email: "manager@scresh.test", password: "Password123" },
-              s: { email: "supervisor@scresh.test", password: "Password123" },
-              b: { email: "partner@scresh.test", password: "Password123" },
+              p: { email: "siti.melati@koperasi.id", password: "Password123" },
+              m: { email: "budi.melati@koperasi.id", password: "Password123" },
+              s: { email: "dina.supervisor@koperasi.id", password: "Password123" },
+              b: { email: "raka.partner@koperasi.id", password: "Password123" },
             }}
             submitLabel="Sign In"
             fields={[

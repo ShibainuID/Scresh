@@ -1,6 +1,6 @@
 import "server-only";
 
-import type { Role, SessionPrincipal } from "@/lib/domain/auth";
+import { normalizeRoles, type Role, type SessionPrincipal } from "@/lib/domain/auth";
 import { roleHomePath, rolePermissions } from "@/lib/domain/rbac";
 
 export class AuthorizationError extends Error {
@@ -12,11 +12,13 @@ export class AuthorizationError extends Error {
 
 export class RbacService {
   hasRole(session: SessionPrincipal, allowedRoles: Role[]) {
-    return session.user.roles.some((role) => allowedRoles.includes(role));
+    return normalizeRoles(session.user.roles).some((role) =>
+      allowedRoles.includes(role),
+    );
   }
 
   hasPermission(session: SessionPrincipal, permission: string) {
-    return session.user.roles.some((role) => {
+    return normalizeRoles(session.user.roles).some((role) => {
       const permissions = rolePermissions[role];
       return permissions.includes("*") || permissions.includes(permission);
     });
@@ -30,7 +32,8 @@ export class RbacService {
 
   getPrimaryHome(session: SessionPrincipal) {
     const priority: Role[] = ["admin", "manager", "supervisor", "partner", "staff"];
-    const role = priority.find((candidate) => session.user.roles.includes(candidate));
+    const sessionRoles = normalizeRoles(session.user.roles);
+    const role = priority.find((candidate) => sessionRoles.includes(candidate));
     return role ? roleHomePath[role] : "/staff";
   }
 }

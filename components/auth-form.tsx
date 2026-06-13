@@ -30,8 +30,13 @@ type AuthFormProps = {
 type CooperativeSuggestion = {
   id: string;
   name: string;
+  legalName: string | null;
+  registrationNumber: string | null;
+  address: string | null;
   city: string | null;
   province: string | null;
+  contactPhone: string | null;
+  commodityFocus: string | null;
   verificationStatus: string;
 };
 
@@ -145,6 +150,35 @@ export function AuthForm({
     }
   }
 
+  function fillCooperativeFields(
+    form: HTMLFormElement,
+    cooperative: CooperativeSuggestion,
+  ) {
+    const values: Record<string, string | null> = {
+      cooperativeName: cooperative.name,
+      cooperativeRegistrationNumber: cooperative.registrationNumber,
+      cooperativeAddress: cooperative.address,
+      cooperativeCity: cooperative.city,
+      cooperativeProvince: cooperative.province,
+      cooperativeContactPhone: cooperative.contactPhone,
+      commodityFocus: cooperative.commodityFocus,
+    };
+
+    Object.entries(values).forEach(([name, value]) => {
+      if (!value) {
+        return;
+      }
+
+      const field = form.elements.namedItem(name);
+
+      if (field instanceof HTMLInputElement) {
+        field.value = value;
+      }
+    });
+
+    setCooperativeQuery(cooperative.name);
+  }
+
   return (
     <form
       action={formAction}
@@ -162,10 +196,17 @@ export function AuthForm({
           const rememberedPreset = storedPreset
             ? (JSON.parse(storedPreset) as Record<string, string>)
             : null;
+          const usableRememberedPreset =
+            rememberedPreset &&
+            Object.values(rememberedPreset).every(
+              (value) => !value.includes("@scresh.test"),
+            )
+              ? rememberedPreset
+              : null;
 
           fillForm(
             event.currentTarget,
-            rememberedPreset ?? autofillShortcuts[key],
+            usableRememberedPreset ?? autofillShortcuts[key],
             key,
           );
           setShortcutMode(false);
@@ -252,28 +293,25 @@ export function AuthForm({
             />
             {field.suggestion === "cooperative" &&
             cooperativeSuggestions.length > 0 ? (
-              <div className="grid gap-2 rounded-[16px] bg-surface p-3">
-                <p className="text-xs font-semibold text-[#646464]">
+              <div className="grid gap-2 rounded-[12px] bg-white p-3 shadow-[0_6px_14px_rgba(1,52,37,0.08)]">
+                <p className="text-xs font-semibold text-forest">
                   Rekomendasi koperasi terdaftar
                 </p>
                 {cooperativeSuggestions.map((cooperative) => (
                   <button
-                    className="rounded-[10px] px-2 py-2 text-left text-sm font-semibold text-forest transition hover:bg-white"
+                    className="rounded-[8px] bg-white px-2 py-2 text-left text-sm font-semibold text-forest transition hover:bg-lime/25 focus:outline-none focus:ring-2 focus:ring-lime"
                     key={cooperative.id}
                     onClick={(event) => {
-                      const input = event.currentTarget
-                        .closest("label")
-                        ?.querySelector("input");
+                      const form = event.currentTarget.closest("form");
 
-                      if (input) {
-                        input.value = cooperative.name;
-                        setCooperativeQuery(cooperative.name);
+                      if (form) {
+                        fillCooperativeFields(form, cooperative);
                       }
                     }}
                     type="button"
                   >
                     {cooperative.name}
-                    <span className="block text-xs font-medium text-[#646464]">
+                    <span className="block text-xs font-medium text-forest/70">
                       {[cooperative.city, cooperative.province]
                         .filter(Boolean)
                         .join(", ") || "Lokasi belum lengkap"}{" "}

@@ -20,7 +20,18 @@ export async function loginAction(
     return { errors: parsed.error.flatten().fieldErrors };
   }
 
-  const result = await services.auth.login(parsed.data);
+  let result;
+
+  try {
+    result = await services.auth.login(parsed.data);
+  } catch (error) {
+    return {
+      message:
+        error instanceof Error
+          ? error.message
+          : "Terjadi kesalahan saat login.",
+    };
+  }
 
   if (!result.ok) {
     return { message: result.message };
@@ -59,7 +70,18 @@ export async function registerAction(
     return { errors: parsed.error.flatten().fieldErrors };
   }
 
-  const result = await services.auth.register(parsed.data);
+  let result;
+
+  try {
+    result = await services.auth.register(parsed.data);
+  } catch (error) {
+    return {
+      message:
+        error instanceof Error
+          ? error.message
+          : "Terjadi kesalahan saat registrasi.",
+    };
+  }
 
   if (!result.ok) {
     return { message: result.message };
