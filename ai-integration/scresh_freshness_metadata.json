@@ -1,0 +1,52 @@
+{
+  "model_name": "efficientnet_b0",
+  "class_names": [
+    "fresh",
+    "medium",
+    "rotten"
+  ],
+  "img_size": 224,
+  "freshness_classes": [
+    "fresh",
+    "medium",
+    "rotten"
+  ],
+  "grades": [
+    "A",
+    "B",
+    "C",
+    "D"
+  ],
+  "shelf_life": {
+    "lettuce": {
+      "A": 5,
+      "B": 3,
+      "C": 1,
+      "D": 0
+    },
+    "chili": {
+      "A": 7,
+      "B": 4,
+      "C": 2,
+      "D": 0
+    },
+    "potato": {
+      "A": 14,
+      "B": 7,
+      "C": 3,
+      "D": 0
+    },
+    "onion": {
+      "A": 14,
+      "B": 7,
+      "C": 3,
+      "D": 0
+    },
+    "tomato": {
+      "A": 5,
+      "B": 3,
+      "C": 1,
+      "D": 0
+    }
+  }
+}

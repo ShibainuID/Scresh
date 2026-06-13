@@ -1,0 +1,83 @@
+{
+  "project": "Scresh",
+  "segmentation_architecture": "DINOv3 frozen encoder + lightweight binary segmentation decoder",
+  "segmentation_type": "binary semantic segmentation with connected-component multi-object extraction",
+  "dino_model_id": "facebook/dinov3-vits16-pretrain-lvd1689m",
+  "img_size": 512,
+  "seg_model_path": "/kaggle/working/scresh_dinov3_frozen_decoder_best.pt",
+  "fresh_model_path": "/kaggle/working/scresh_freshness_efficientnet_b0_best.pt",
+  "best_seg_val_iou": 0.8678847959265112,
+  "best_fresh_val_acc": 0.9466130893621871,
+  "multi_object": {
+    "enabled": true,
+    "keep_largest_only": false,
+    "min_component_area": 250,
+    "max_objects": 10,
+    "mask_threshold": 0.5
+  },
+  "label_filter": {
+    "drop_boxy_seg_labels": true,
+    "min_seg_polygon_points": 6,
+    "min_mask_area_ratio": 0.005,
+    "max_mask_area_ratio": 0.98
+  },
+  "sources": [
+    {
+      "name": "datasets",
+      "path": "/kaggle/input/datasets",
+      "enabled": true
+    }
+  ],
+  "freshness": {
+    "model_name": "efficientnet_b0",
+    "class_names": [
+      "fresh",
+      "medium",
+      "rotten"
+    ],
+    "img_size": 224,
+    "freshness_classes": [
+      "fresh",
+      "medium",
+      "rotten"
+    ],
+    "grades": [
+      "A",
+      "B",
+      "C",
+      "D"
+    ],
+    "shelf_life": {
+      "lettuce": {
+        "A": 5,
+        "B": 3,
+        "C": 1,
+        "D": 0
+      },
+      "chili": {
+        "A": 7,
+        "B": 4,
+        "C": 2,
+        "D": 0
+      },
+      "potato": {
+        "A": 14,
+        "B": 7,
+        "C": 3,
+        "D": 0
+      },
+      "onion": {
+        "A": 14,
+        "B": 7,
+        "C": 3,
+        "D": 0
+      },
+      "tomato": {
+        "A": 5,
+        "B": 3,
+        "C": 1,
+        "D": 0
+      }
+    }
+  }
+}

@@ -1,0 +1,10 @@
+.git
+.next
+node_modules
+coverage
+**/__pycache__
+**/.pytest_cache
+ai-service/.venv
+ai-service/tests
+*.pyc
+.env*

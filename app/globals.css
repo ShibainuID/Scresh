@@ -84,3 +84,57 @@ p.caption {
 .bg-gradient-2 {
     @apply bg-gradient-to-b from-[#b5e930] via-60% via-[#b5e930] to-[#013425];
 }
+
+.sparkle-layer {
+    pointer-events: none;
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    -webkit-mask-position: center;
+    mask-position: center;
+    -webkit-mask-repeat: no-repeat;
+    mask-repeat: no-repeat;
+    -webkit-mask-size: cover;
+    mask-size: cover;
+    animation: sparkle-fade-in 0.6s ease-out forwards;
+}
+
+.sparkle {
+    position: absolute;
+    border-radius: 9999px;
+    background: #ffffff;
+    animation: sparkle-twinkle var(--sparkle-duration, 1.4s) ease-in-out infinite;
+    animation-delay: var(--sparkle-delay, 0s);
+    will-change: transform, opacity;
+}
+
+@keyframes sparkle-twinkle {
+    0%,
+    100% {
+        opacity: 0.25;
+        transform: scale(0.7);
+    }
+
+    50% {
+        opacity: 1;
+        transform: scale(1.5);
+    }
+}
+
+@keyframes sparkle-fade-in {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .sparkle-layer,
+    .sparkle {
+        animation: none;
+        opacity: 0.35;
+    }
+}

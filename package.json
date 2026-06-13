@@ -6,16 +6,23 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "db:migrate": "node scripts/db.mjs migrate",
+    "db:seed": "node scripts/db.mjs seed",
+    "db:reset": "node scripts/db.mjs reset"
   },
   "dependencies": {
     "@types/pg": "^8.20.0",
+    "@zxing/browser": "^0.2.0",
     "bcryptjs": "^3.0.3",
     "jose": "^6.2.3",
+    "lucide-react": "^1.18.0",
     "next": "16.2.9",
     "pg": "^8.21.0",
     "react": "19.2.4",
+    "react-barcode": "^1.6.1",
     "react-dom": "19.2.4",
+    "sonner": "^2.0.7",
     "zod": "^4.4.3"
   },
   "devDependencies": {
