@@ -46,6 +46,7 @@ type DashboardWidget = {
   metrics?: DashboardMetric[];
   actions?: DashboardAction[];
   cta?: DashboardCta;
+  content?: ReactNode;
   span?: "half" | "full";
   tone?: "white" | "forest" | "orange";
 };
@@ -338,6 +339,10 @@ function WidgetCard({ widget }: { widget: DashboardWidget }) {
                 );
               })}
             </div>
+          ) : null}
+
+          {widget.content ? (
+            <div className="flex-1">{widget.content}</div>
           ) : null}
 
           {widget.cta ? (

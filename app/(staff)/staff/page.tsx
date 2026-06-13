@@ -1,6 +1,8 @@
+import Link from "next/link";
 import { RoleDashboard } from "@/components/role-dashboard";
 import { requireRole } from "@/lib/auth/dal";
 import { services } from "@/lib/server/services/container";
+import type { ScreshBatchRow } from "@/lib/server/repositories/scresh-batch-repository";
 
 export default async function StaffPage() {
   const session = await requireRole(["staff", "manager", "admin"]);
@@ -23,6 +25,7 @@ export default async function StaffPage() {
     (b) => b.freshness_grade === "D" || b.freshness_grade === "C" || b.shelf_life_hours <= 24,
   ).length;
   const totalRemainingKg = batches.reduce((sum, b) => sum + Number(b.remaining_weight_kg), 0);
+  const recommendation = buildDistributionRecommendation(batches);
   const todayMovements = movements.filter((m) => {
     const created = new Date(m.created_at);
     const today = new Date();
@@ -100,6 +103,13 @@ export default async function StaffPage() {
             { label: "FIFO priority", value: String(batches.filter((b) => b.distribution_priority <= 2).length) },
           ],
         },
+        {
+          title: "Rekomendasi urutan distribusi",
+          description: "Berdasarkan FIFO dan freshness grade (prioritas rendah = keluar dulu)",
+          span: "full",
+          cta: { label: "Buat movement", href: "/staff/movements/new" },
+          content: <DistributionRecommendationList batches={recommendation} />,
+        },
       ]}
     />
   );
@@ -110,4 +120,59 @@ function averageConfidence(batches: { confidence_score: number; freshness_grade:
   if (scanned.length === 0) return "0";
   const avg = scanned.reduce((sum, b) => sum + Number(b.confidence_score), 0) / scanned.length;
   return avg.toFixed(0);
+}
+
+function buildDistributionRecommendation(batches: ScreshBatchRow[]): ScreshBatchRow[] {
+  return [...batches]
+    .filter((b) => Number(b.remaining_weight_kg) > 0 && b.freshness_grade !== "pending")
+    .sort((a, b) => {
+      if (a.distribution_priority !== b.distribution_priority) {
+        return a.distribution_priority - b.distribution_priority;
+      }
+      return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+    })
+    .slice(0, 5);
+}
+
+function DistributionRecommendationList({ batches }: { batches: ScreshBatchRow[] }) {
+  if (batches.length === 0) {
+    return (
+      <p className="text-sm leading-5 text-forest/65">
+        Tidak ada batch yang siap didistribusikan. Tambah atau scan batch terlebih dahulu.
+      </p>
+    );
+  }
+
+  return (
+    <ol className="flex flex-col gap-3">
+      {batches.map((batch, index) => (
+        <li key={batch.id}>
+          <Link
+            className="flex items-center gap-4 rounded-[18px] bg-white p-4 text-forest transition hover:bg-white/80"
+            href={`/staff/movements/new?batchId=${batch.id}`}
+          >
+            <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-lime font-sans text-sm font-bold">
+              {index + 1}
+            </span>
+            <div className="min-w-0 flex-1">
+              <p className="truncate font-sans text-lg font-semibold leading-6 tracking-normal">
+                {batch.batch_code}
+              </p>
+              <p className="truncate text-sm leading-5 text-forest/70">
+                {batch.commodity} · {batch.supplier_name} · {Number(batch.remaining_weight_kg).toFixed(1)} kg tersisa
+              </p>
+            </div>
+            <div className="flex shrink-0 flex-col items-end gap-1">
+              <span className="rounded-full bg-forest px-2.5 py-1 text-xs font-bold uppercase tracking-normal text-white">
+                Grade {batch.freshness_grade.toUpperCase()}
+              </span>
+              <span className="text-xs leading-4 text-forest/70">
+                {batch.shelf_life_hours} jam
+              </span>
+            </div>
+          </Link>
+        </li>
+      ))}
+    </ol>
+  );
 }

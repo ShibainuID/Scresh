@@ -52,25 +52,22 @@ export default async function CreditPage() {
           ],
         },
         {
-          title: "Aksi Cepat",
+          title: "Ajukan Pinjaman Baru",
+          description: "Catat kebutuhan dan tujuan pembiayaan anggota.",
           span: "full",
-          actions: [
-            {
-              label: "Ajukan Pinjaman Baru",
-              description: "Catat kebutuhan dan tujuan pembiayaan anggota.",
-              href: "/credit/members",
-            },
-            {
-              label: "Lihat Daftar Pengajuan",
-              description: "Assessment queue dan status risk tier.",
-              href: "/credit/loans",
-            },
-            {
-              label: "Cari Anggota",
-              description: "Cek identitas, status, dan riwayat pinjaman.",
-              href: "/credit/members",
-            },
-          ],
+          cta: { label: "Mulai", href: "/credit/members" },
+        },
+        {
+          title: "Lihat Daftar Pengajuan",
+          description: "Assessment queue dan status risk tier.",
+          span: "full",
+          cta: { label: "Buka", href: "/credit/loans" },
+        },
+        {
+          title: "Cari Anggota",
+          description: "Cek identitas, status, dan riwayat pinjaman.",
+          span: "full",
+          cta: { label: "Cari", href: "/credit/members" },
         },
       ]}
     />
