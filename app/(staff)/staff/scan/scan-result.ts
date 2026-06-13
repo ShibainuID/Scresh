@@ -21,6 +21,17 @@ export function maskDataUrl(maskBase64: string) {
   return `data:image/png;base64,${maskBase64}`;
 }
 
+export function getScanErrorMessage(payload: unknown, fallback: string) {
+  if (
+    isRecord(payload) &&
+    typeof payload.error === "string" &&
+    payload.error.trim()
+  ) {
+    return payload.error;
+  }
+  return fallback;
+}
+
 export function parseScanResult(payload: unknown): ScanResult {
   if (!isRecord(payload) || !isRecord(payload.summary)) {
     throw new Error("Respons AI tidak valid");

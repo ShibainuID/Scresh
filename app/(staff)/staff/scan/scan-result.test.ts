@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import {
+  getScanErrorMessage,
   maskDataUrl,
   parseScanResult,
 } from "./scan-result";
@@ -8,6 +9,23 @@ test("builds a transparent PNG data URL from the AI mask", () => {
   expect(maskDataUrl("encoded-mask")).toBe(
     "data:image/png;base64,encoded-mask",
   );
+});
+
+describe("getScanErrorMessage", () => {
+  test("preserves a validation error returned by the scan API", () => {
+    expect(
+      getScanErrorMessage(
+        { error: "No produce objects detected" },
+        "Analisis foto gagal.",
+      ),
+    ).toBe("No produce objects detected");
+  });
+
+  test("uses a fallback for malformed error responses", () => {
+    expect(getScanErrorMessage({}, "Analisis foto gagal.")).toBe(
+      "Analisis foto gagal.",
+    );
+  });
 });
 
 describe("parseScanResult", () => {
