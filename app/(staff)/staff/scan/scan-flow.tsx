@@ -238,8 +238,16 @@ export function ScanFlow({ batches }: { batches: ScreshBatchRow[] }) {
           <ArrowLeft className="h-6 w-6" strokeWidth={2.25} />
         </button>
 
-        {phase === "camera" && !cameraError ? (
-          <div className="absolute inset-x-0 bottom-0 z-20 mx-auto max-w-md bg-white px-5 pb-8 pt-5 text-forest">
+        {!cameraError ? (
+          <div
+            aria-hidden={phase !== "camera"}
+            className={`absolute inset-x-0 bottom-0 z-20 mx-auto max-w-md rounded-t-[32px] bg-white px-5 pb-8 pt-4 text-forest shadow-[0_-8px_40px_rgba(0,0,0,0.2)] transition-transform duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] motion-reduce:transition-none ${
+              phase === "camera"
+                ? "translate-y-0"
+                : "pointer-events-none translate-y-[110%]"
+            }`}
+          >
+            <div className="mx-auto mb-5 h-1.5 w-12 rounded-full bg-forest/15" />
             <div className="flex items-start gap-3">
               <ScanLine className="mt-0.5 h-6 w-6 shrink-0 text-violet-600" />
               <div>
@@ -276,10 +284,20 @@ export function ScanFlow({ batches }: { batches: ScreshBatchRow[] }) {
           </div>
         ) : null}
 
-        {phase === "analyzing" ? (
-          <div className="absolute inset-x-5 bottom-8 z-20 mx-auto max-w-md rounded-2xl bg-white p-5 text-forest">
+        <div
+          aria-hidden={phase !== "analyzing"}
+          aria-live="polite"
+          className={`absolute inset-x-5 bottom-7 z-20 mx-auto max-w-md rounded-[24px] bg-white p-5 text-forest shadow-[0_12px_40px_rgba(0,0,0,0.24)] transition-all duration-300 motion-reduce:transition-none ${
+            phase === "analyzing"
+              ? "translate-y-0 opacity-100"
+              : "pointer-events-none translate-y-8 opacity-0"
+          }`}
+        >
+          {phase === "analyzing" ? (
             <div className="flex items-center gap-3">
-              <LoaderCircle className="h-6 w-6 animate-spin text-violet-600 motion-reduce:animate-none" />
+              <div className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-violet-50">
+                <LoaderCircle className="h-6 w-6 animate-spin text-violet-600 motion-reduce:animate-none" />
+              </div>
               <div>
                 <p className="font-semibold">Menganalisis objek</p>
                 <p className="text-sm text-muted-foreground">
@@ -287,12 +305,20 @@ export function ScanFlow({ batches }: { batches: ScreshBatchRow[] }) {
                 </p>
               </div>
             </div>
-          </div>
-        ) : null}
+          ) : null}
+        </div>
 
-        {result && (phase === "result" || phase === "select") ? (
-          <div className="absolute inset-x-0 bottom-0 z-30 mx-auto max-h-[58vh] max-w-md overflow-y-auto rounded-t-2xl bg-white px-5 pb-8 pt-5 text-forest">
-            {phase === "result" ? (
+        <div
+          aria-hidden={!result || (phase !== "result" && phase !== "select")}
+          className={`absolute inset-x-0 bottom-0 z-30 mx-auto max-h-[64vh] max-w-md overflow-y-auto rounded-t-[32px] bg-white px-5 pb-8 pt-4 text-forest shadow-[0_-8px_40px_rgba(0,0,0,0.24)] transition-transform duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] motion-reduce:transition-none ${
+            result && (phase === "result" || phase === "select")
+              ? "translate-y-0"
+              : "pointer-events-none translate-y-[110%]"
+          }`}
+        >
+          <div className="mx-auto mb-5 h-1.5 w-12 rounded-full bg-forest/15" />
+          {result ? (
+            phase === "result" ? (
               <>
                 <div className="flex items-start justify-between gap-4">
                   <div>
@@ -386,9 +412,9 @@ export function ScanFlow({ batches }: { batches: ScreshBatchRow[] }) {
                   Kembali ke hasil
                 </button>
               </>
-            )}
-          </div>
-        ) : null}
+            )
+          ) : null}
+        </div>
       </div>
     </main>
   );
