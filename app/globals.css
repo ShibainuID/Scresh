@@ -85,59 +85,56 @@ p.caption {
     @apply bg-gradient-to-b from-[#b5e930] via-60% via-[#b5e930] to-[#013425];
 }
 
-.segmentation-shimmer {
+.sparkle-layer {
     pointer-events: none;
-    overflow: hidden;
-    mix-blend-mode: screen;
+    position: absolute;
+    inset: 0;
+    opacity: 0;
     -webkit-mask-position: center;
     mask-position: center;
     -webkit-mask-repeat: no-repeat;
     mask-repeat: no-repeat;
     -webkit-mask-size: cover;
     mask-size: cover;
+    animation: sparkle-fade-in 0.6s ease-out forwards;
 }
 
-.segmentation-shimmer::before {
+.sparkle {
     position: absolute;
-    inset: -25% -70%;
-    content: "";
-    background: linear-gradient(
-        105deg,
-        transparent 42%,
-        rgb(255 255 255 / 12%) 47%,
-        rgb(245 232 255 / 82%) 50%,
-        rgb(255 255 255 / 12%) 53%,
-        transparent 58%
-    );
-    opacity: 0;
-    transform: translate3d(-42%, 0, 0);
-    animation: segmentation-shimmer-sweep 2.8s
-        cubic-bezier(0.22, 1, 0.36, 1) infinite;
+    border-radius: 9999px;
+    background: #ffffff;
+    animation: sparkle-twinkle var(--sparkle-duration, 1.4s) ease-in-out infinite;
+    animation-delay: var(--sparkle-delay, 0s);
     will-change: transform, opacity;
 }
 
-@keyframes segmentation-shimmer-sweep {
+@keyframes sparkle-twinkle {
     0%,
-    15% {
-        opacity: 0;
-        transform: translate3d(-42%, 0, 0);
-    }
-
-    25%,
-    75% {
-        opacity: 1;
-    }
-
-    85%,
     100% {
+        opacity: 0.25;
+        transform: scale(0.7);
+    }
+
+    50% {
+        opacity: 1;
+        transform: scale(1.5);
+    }
+}
+
+@keyframes sparkle-fade-in {
+    from {
         opacity: 0;
-        transform: translate3d(42%, 0, 0);
+    }
+
+    to {
+        opacity: 1;
     }
 }
 
 @media (prefers-reduced-motion: reduce) {
-    .segmentation-shimmer::before {
+    .sparkle-layer,
+    .sparkle {
         animation: none;
-        opacity: 0;
+        opacity: 0.35;
     }
 }

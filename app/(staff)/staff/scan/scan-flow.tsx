@@ -17,6 +17,7 @@ import {
   SCAN_DRAFT_STORAGE_KEY,
   serializeScanDraft,
 } from "./scan-draft";
+import { SegmentationSparkles } from "./segmentation-sparkles";
 import {
   getScanErrorMessage,
   parseScanResult,
@@ -258,13 +259,9 @@ export function ScanFlow({ targetBatch }: ScanFlowProps) {
                     {supportsAnimatedSegmentation(
                       result.visualizationMediaType,
                     ) ? (
-                      <div
-                        aria-hidden="true"
-                        className="segmentation-shimmer absolute inset-0"
-                        style={{
-                          WebkitMaskImage: `url("${visualizationUrl}")`,
-                          maskImage: `url("${visualizationUrl}")`,
-                        }}
+                      <SegmentationSparkles
+                        grade={result.summary.grade}
+                        maskUrl={visualizationUrl}
                       />
                     ) : null}
                   </>
