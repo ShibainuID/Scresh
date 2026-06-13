@@ -18,7 +18,7 @@ export const roleLabels: Record<Role, string> = {
 
 export const rolePermissions: Record<Role, string[]> = {
   staff: ["members:read", "scresh:scan", "loans:create"],
-  manager: ["members:read", "loans:approve", "reports:read"],
+  manager: ["members:read", "loans:approve", "reports:read", "scresh:scan"],
   supervisor: ["audit:read", "risk:read", "reports:read"],
   partner: ["financing:read", "portfolio:read"],
   admin: ["*"],
