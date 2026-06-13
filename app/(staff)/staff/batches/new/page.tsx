@@ -1,11 +1,31 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useEffect, useState } from "react";
 import { registerBatchAction } from "@/app/actions/scresh";
 import { PageHeader } from "@/components/page-header";
+import {
+  getDraftCommodityLabel,
+  parseScanDraft,
+  SCAN_DRAFT_STORAGE_KEY,
+  type ScanDraft,
+} from "../../scan/scan-draft";
 
 export default function NewBatchPage() {
   const [state, action, isPending] = useActionState(registerBatchAction, {});
+  const [scanDraft, setScanDraft] = useState<ScanDraft | null>(null);
+  const [commodity, setCommodity] = useState("");
+
+  useEffect(() => {
+    queueMicrotask(() => {
+      const draft = parseScanDraft(
+        sessionStorage.getItem(SCAN_DRAFT_STORAGE_KEY),
+      );
+      if (!draft) return;
+      sessionStorage.removeItem(SCAN_DRAFT_STORAGE_KEY);
+      setScanDraft(draft);
+      setCommodity(getDraftCommodityLabel(draft.commodity));
+    });
+  }, []);
 
   return (
     <main className="min-h-screen bg-gradient-to-b from-white via-[#effbd6] to-lime pb-28 text-forest">
@@ -19,6 +39,28 @@ export default function NewBatchPage() {
         )}
 
         <form action={action} className="rounded-[28px] bg-white p-6">
+          {scanDraft ? (
+            <div className="mb-7 rounded-[18px] bg-violet-50 p-4 text-sm text-violet-950">
+              <p className="font-bold">Hasil scan siap disimpan</p>
+              <p className="mt-1">
+                Grade {scanDraft.grade} · Confidence{" "}
+                {scanDraft.confidencePercent}% · Umur simpan{" "}
+                {scanDraft.shelfLifeDays} hari
+              </p>
+              <input name="scanGrade" type="hidden" value={scanDraft.grade} />
+              <input
+                name="scanConfidencePercent"
+                type="hidden"
+                value={scanDraft.confidencePercent}
+              />
+              <input
+                name="scanShelfLifeDays"
+                type="hidden"
+                value={scanDraft.shelfLifeDays}
+              />
+            </div>
+          ) : null}
+
           <div className="grid gap-7">
             <Field label="Supplier" required>
               <input
@@ -36,9 +78,11 @@ export default function NewBatchPage() {
                 autoComplete="off"
                 className="h-11 w-full border-0 border-b border-forest/15 bg-transparent px-0 text-base font-medium text-forest outline-none transition placeholder:text-[#646464] focus:border-forest focus:ring-0"
                 name="commodity"
+                onChange={(event) => setCommodity(event.target.value)}
                 placeholder="Contoh: Cabai Merah"
                 required
                 type="text"
+                value={commodity}
               />
             </Field>
 
@@ -107,7 +151,11 @@ export default function NewBatchPage() {
             disabled={isPending}
             type="submit"
           >
-            {isPending ? "Menyimpan..." : "Simpan & Lanjut Scan Freshness"}
+            {isPending
+              ? "Menyimpan..."
+              : scanDraft
+                ? "Simpan Batch"
+                : "Simpan & Lanjut Scan Freshness"}
           </button>
         </form>
       </div>
