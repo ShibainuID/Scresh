@@ -20,6 +20,42 @@ def _checkpoint_state(checkpoint: object) -> dict[str, object]:
     return state
 
 
+def _normalize_segmentation_state(
+    state: dict[str, object],
+) -> dict[str, object]:
+    normalized = {}
+    for key, value in state.items():
+        if key.startswith("backbone.layer."):
+            key = key.replace(
+                "backbone.layer.",
+                "backbone.model.layer.",
+                1,
+            )
+        normalized[key] = value
+    return normalized
+
+
+def _validate_segmentation_load(
+    missing_keys: list[str],
+    unexpected_keys: list[str],
+) -> None:
+    allowed_missing_suffixes = (
+        ".running_mean",
+        ".running_var",
+        ".num_batches_tracked",
+    )
+    invalid_missing = [
+        key
+        for key in missing_keys
+        if not key.endswith(allowed_missing_suffixes)
+    ]
+    if invalid_missing or unexpected_keys:
+        raise RuntimeError(
+            "Segmentation checkpoint is incompatible: "
+            f"missing={invalid_missing}, unexpected={unexpected_keys}"
+        )
+
+
 class TorchSegmenter:
     def __init__(
         self,
@@ -108,7 +144,14 @@ class TorchSegmenter:
             map_location=self.device,
             weights_only=False,
         )
-        self.model.load_state_dict(_checkpoint_state(checkpoint), strict=True)
+        incompatible = self.model.load_state_dict(
+            _normalize_segmentation_state(_checkpoint_state(checkpoint)),
+            strict=False,
+        )
+        _validate_segmentation_load(
+            incompatible.missing_keys,
+            incompatible.unexpected_keys,
+        )
         self.model.to(self.device).eval()
 
     def predict_mask(self, image: Image.Image) -> np.ndarray:

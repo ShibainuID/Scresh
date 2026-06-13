@@ -25,6 +25,7 @@ RUN test -f /app/models/scresh_dinov3_frozen_decoder_best.pt \
     && test -f /app/models/scresh_dinov3_frozen_decoder_metadata.json \
     && test -f /app/models/scresh_freshness_efficientnet_b0_best.pt \
     && test -f /app/models/scresh_freshness_metadata.json \
+    && python -m app.audit \
     && useradd --create-home --uid 10001 scresh \
     && chown -R scresh:scresh /app
 

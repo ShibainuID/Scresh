@@ -19,6 +19,7 @@ def test_docker_image_bundles_models_and_uses_cpu_torch():
 def test_docker_image_exposes_healthcheck_and_service_command():
     dockerfile = DOCKERFILE.read_text()
 
+    assert "python -m app.audit" in dockerfile
     assert "HEALTHCHECK" in dockerfile
     assert 'CMD ["uvicorn", "app.main:app"' in dockerfile
 
