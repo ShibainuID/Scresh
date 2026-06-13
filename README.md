@@ -56,16 +56,32 @@ Each role sees a tailored mobile-first dashboard. Tenant isolation is enforced a
 
 ## Tech Stack
 
-- **Framework:** Next.js 16 (App Router)
-- **Runtime:** Node.js / Bun
-- **Language:** TypeScript
-- **UI:** React 19, Tailwind CSS v4
-- **Database:** PostgreSQL 14+
-- **ORM/Client:** `pg` (native PostgreSQL driver)
-- **Auth:** Encrypted session cookies with `jose`
-- **Password hashing:** `bcryptjs`
-- **AI service:** External FastAPI inference service for produce segmentation and freshness classification
-- **Testing:** Bun test runner
+### Frontend
+
+![Next.js](https://img.shields.io/badge/Next.js_16-000000?logo=next.js&logoColor=white&style=for-the-badge)
+![React](https://img.shields.io/badge/React_19-20232A?logo=react&logoColor=61DAFB&style=for-the-badge)
+![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?logo=typescript&logoColor=white&style=for-the-badge)
+![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS_v4-06B6D4?logo=tailwind-css&logoColor=white&style=for-the-badge)
+
+### Backend & Runtime
+
+![Bun](https://img.shields.io/badge/Bun-000000?logo=bun&logoColor=white&style=for-the-badge)
+![Node.js](https://img.shields.io/badge/Node.js-339933?logo=node.js&logoColor=white&style=for-the-badge)
+![jose](https://img.shields.io/badge/JWT_(jose)-000000?logo=jsonwebtokens&logoColor=white&style=for-the-badge)
+![bcryptjs](https://img.shields.io/badge/bcryptjs-3178C6?style=for-the-badge)
+
+### Database
+
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL_14+-4169E1?logo=postgresql&logoColor=white&style=for-the-badge)
+![pg](https://img.shields.io/badge/pg_(native)-4169E1?logo=postgresql&logoColor=white&style=for-the-badge)
+
+### AI & External Services
+
+![FastAPI](https://img.shields.io/badge/FastAPI_AI_Service-009688?logo=fastapi&logoColor=white&style=for-the-badge)
+
+### Testing
+
+![Bun Test](https://img.shields.io/badge/Bun_Test_Runner-f9f1d8?logo=bun&logoColor=000000&style=for-the-badge)
 
 ---
 
