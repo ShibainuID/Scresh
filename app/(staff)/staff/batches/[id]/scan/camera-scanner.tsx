@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { ArrowLeft, CameraOff } from "lucide-react";
 import { scanFreshnessAction } from "@/app/actions/scresh";
+import { getColdStorageShelfLifeDays, type Grade } from "@/app/(staff)/staff/scan/scan-result";
 import { BarcodeDisplay } from "@/components/barcode-display";
 
 const gradeOptions: Record<
@@ -76,11 +77,14 @@ export function CameraScanner({ batchId, batchCode, commodity }: CameraScannerPr
 
   async function handleSave() {
     const option = gradeOptions[grade];
+    const shelfLifeDays =
+      getColdStorageShelfLifeDays(commodity, grade as Grade) ??
+      option.shelfLifeDays;
     const formData = new FormData();
     formData.append("batchId", batchId);
     formData.append("grade", grade);
     formData.append("confidenceScore", String(option.confidence));
-    formData.append("shelfLifeHours", String(option.shelfLifeDays * 24));
+    formData.append("shelfLifeHours", String(shelfLifeDays * 24));
 
     startTransition(async () => {
       const result = await scanFreshnessAction({}, formData);
@@ -96,6 +100,9 @@ export function CameraScanner({ batchId, batchCode, commodity }: CameraScannerPr
   }
 
   const option = gradeOptions[grade];
+  const shelfLifeDays =
+    getColdStorageShelfLifeDays(commodity, grade as Grade) ??
+    option.shelfLifeDays;
 
   return (
     <main className="fixed inset-0 z-40 overflow-hidden bg-black">
@@ -171,7 +178,7 @@ export function CameraScanner({ batchId, batchCode, commodity }: CameraScannerPr
             <div className="mt-6">
               <p className="text-sm text-forest/70">Perkiraan umur simpan</p>
               <p className="font-sans text-4xl font-semibold">
-                {option.shelfLifeDays}{" "}
+                {shelfLifeDays}{" "}
                 <span className="text-xl font-medium text-forest/70">hari</span>
               </p>
             </div>

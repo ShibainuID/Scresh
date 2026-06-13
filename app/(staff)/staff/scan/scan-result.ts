@@ -1,11 +1,13 @@
 type UnknownRecord = Record<string, unknown>;
 
+export type Grade = "A" | "B" | "C" | "D";
+
 export type ScanResult = {
   commodity: string;
   summary: {
     freshnessClass: string;
     confidencePercent: number;
-    grade: "A" | "B" | "C" | "D";
+    grade: Grade;
     shelfLifeDays: number;
     recommendation: string;
     objectCount: number;
@@ -13,6 +15,37 @@ export type ScanResult = {
   visualizationBase64: string;
   visualizationMediaType: "image/png" | "image/jpeg";
 };
+
+const SHELF_LIFE_COLD_STORAGE: Record<string, Record<Grade, number>> = {
+  lettuce: { A: 14, B: 7, C: 2, D: 0 },
+  chili: { A: 14, B: 7, C: 3, D: 0 },
+  tomato: { A: 7, B: 4, C: 1, D: 0 },
+  potato: { A: 30, B: 14, C: 5, D: 0 },
+  onion: { A: 30, B: 14, C: 5, D: 0 },
+};
+
+export function getColdStorageShelfLifeDays(
+  commodity: string,
+  grade: Grade,
+): number | null {
+  return SHELF_LIFE_COLD_STORAGE[commodity]?.[grade] ?? null;
+}
+
+export function getColdStorageRecommendation(
+  grade: Grade,
+  shelfLifeDays: number,
+): string {
+  if (grade === "D") {
+    return "Tidak layak disimpan. Buang atau tandai sebagai limbah.";
+  }
+  if (grade === "C") {
+    return `Batch rawan. Keluarkan atau proses dalam ${shelfLifeDays} hari.`;
+  }
+  if (grade === "B") {
+    return `Segar baik. Prioritaskan distribusi dalam ${shelfLifeDays} hari.`;
+  }
+  return `Segar optimal. Aman disimpan di cold storage hingga ${shelfLifeDays} hari.`;
+}
 
 function isRecord(value: unknown): value is UnknownRecord {
   return typeof value === "object" && value !== null;
@@ -48,7 +81,7 @@ export function parseScanResult(payload: unknown): ScanResult {
   }
 
   const { summary } = payload;
-  const grade = summary.grade;
+  const grade = String(summary.grade) as Grade;
   const hasMask =
     payload.mask_media_type === "image/png" &&
     typeof payload.mask_base64 === "string";
@@ -57,7 +90,7 @@ export function parseScanResult(payload: unknown): ScanResult {
     typeof payload.overlay_base64 === "string";
   if (
     typeof payload.commodity !== "string" ||
-    !["A", "B", "C", "D"].includes(String(grade)) ||
+    !["A", "B", "C", "D"].includes(grade) ||
     typeof summary.freshness_class !== "string" ||
     typeof summary.confidence !== "number" ||
     typeof summary.shelf_life_days !== "number" ||
@@ -68,14 +101,20 @@ export function parseScanResult(payload: unknown): ScanResult {
     throw new Error("Respons AI tidak valid");
   }
 
+  const commodity = payload.commodity;
+  const shelfLifeDays =
+    getColdStorageShelfLifeDays(commodity, grade) ??
+    Math.max(0, Math.round(summary.shelf_life_days));
+  const recommendation = getColdStorageRecommendation(grade, shelfLifeDays);
+
   return {
-    commodity: payload.commodity,
+    commodity,
     summary: {
       freshnessClass: summary.freshness_class,
       confidencePercent: Math.round(summary.confidence * 100),
-      grade: grade as ScanResult["summary"]["grade"],
-      shelfLifeDays: summary.shelf_life_days,
-      recommendation: summary.recommendation,
+      grade,
+      shelfLifeDays,
+      recommendation,
       objectCount: summary.object_count,
     },
     visualizationBase64: hasMask
