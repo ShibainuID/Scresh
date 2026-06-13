@@ -332,8 +332,8 @@ from scresh_batches b
 join users staff on staff.email = 'siti.melati@koperasi.id'
 join (
   values
-    ('KMJ-CBI-20260612-001', 'outbound', 800.00, 'Pasar Mitra Ciroyom', 'Distribusi normal berdasarkan FIFO.', '2026-06-12 11:30:00+07'),
-    ('KMJ-TMT-20260612-002', 'outbound', 1200.00, 'Offtaker Resto Bandung', 'Prioritas keluar karena Grade C dan shelf life 18 jam.', '2026-06-12 12:10:00+07')
+    ('KMJ-CBI-20260612-001', 'distribution', 800.00, 'Pasar Mitra Ciroyom', 'Distribusi normal berdasarkan FIFO.', '2026-06-12 11:30:00+07'),
+    ('KMJ-TMT-20260612-002', 'distribution', 1200.00, 'Offtaker Resto Bandung', 'Prioritas keluar karena Grade C dan shelf life 18 jam.', '2026-06-12 12:10:00+07')
 ) as movement_seed(batch_code, movement_type, quantity_kg, destination, notes, created_at)
   on movement_seed.batch_code = b.batch_code
 where not exists (

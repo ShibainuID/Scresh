@@ -189,7 +189,7 @@ export function CameraScanner({ batchId, batchCode, commodity }: CameraScannerPr
             </div>
 
             <div className="mt-6 rounded-[16px] bg-lime p-4">
-              <div className="overflow-hidden rounded-[8px] bg-white/60 px-2 py-3">
+              <div className="overflow-hidden rounded-[8px] px-2 py-3">
                 {barcodeValue ? <BarcodeDisplay value={barcodeValue} /> : null}
               </div>
               <button

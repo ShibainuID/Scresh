@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "@types/pg": "^8.20.0",
+    "@zxing/browser": "^0.2.0",
     "bcryptjs": "^3.0.3",
     "jose": "^6.2.3",
     "lucide-react": "^1.18.0",

@@ -89,7 +89,7 @@ export class ScreshMovementRepository {
     }>(
       `
       select
-        coalesce(sum(case when sm.movement_type = 'distribution' then sm.quantity_kg else 0 end), 0) as total_outbound_kg,
+        coalesce(sum(case when sm.movement_type in ('distribution', 'outbound') then sm.quantity_kg else 0 end), 0) as total_outbound_kg,
         coalesce(sum(case when sm.movement_type = 'waste' then sm.quantity_kg else 0 end), 0) as total_waste_kg,
         coalesce(sum(case when sm.movement_type = 'return' then sm.quantity_kg else 0 end), 0) as total_return_kg,
         coalesce(sum(case when sm.movement_type = 'claim' then sm.quantity_kg else 0 end), 0) as total_claim_kg

@@ -75,7 +75,7 @@ export default async function TagPage({ params }: Props) {
             </div>
           ) : null}
 
-          <div className="mt-6 flex items-center justify-center rounded-[20px] bg-surface p-6">
+          <div className="mt-6 flex items-center justify-center rounded-[20px] bg-lime p-6">
             <BarcodeDisplay value={batch.batch_code} />
           </div>
 
