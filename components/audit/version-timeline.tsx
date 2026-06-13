@@ -18,7 +18,7 @@ export function VersionTimeline({ versions }: { versions: LoanVersionRow[] }) {
         return (
           <div key={version.id} className="relative mb-5 pl-6">
             <div className={`absolute left-0 top-1 h-4 w-4 rounded-full border-2 ${changed ? "border-orange bg-orange" : "border-lime bg-lime"}`} />
-            <div className="rounded-[16px] bg-surface p-4">
+            <div className="rounded-[16px] bg-white p-4">
               <div className="flex items-center justify-between">
                 <span className="font-sans font-semibold text-forest">
                   Versi {version.version_number}
