@@ -22,6 +22,9 @@ type AuthFormProps = {
   submitLabel: string;
   fields: Field[];
   roleSelect?: boolean;
+  autofillPresets?: Array<Record<string, string>>;
+  autofillShortcuts?: Record<string, Record<string, string>>;
+  autofillMemoryMode?: "register" | "login";
 };
 
 type CooperativeSuggestion = {
@@ -41,8 +44,12 @@ export function AuthForm({
   submitLabel,
   fields,
   roleSelect,
+  autofillPresets,
+  autofillShortcuts,
+  autofillMemoryMode,
 }: AuthFormProps) {
   const [state, formAction, pending] = useActionState(action, initialState);
+  const [shortcutMode, setShortcutMode] = useState(false);
   const [cooperativeQuery, setCooperativeQuery] = useState("");
   const [cooperativeSuggestions, setCooperativeSuggestions] = useState<
     CooperativeSuggestion[]
@@ -101,18 +108,109 @@ export function AuthForm({
     };
   }, [cooperativeQuery]);
 
+  function fillForm(
+    form: HTMLFormElement,
+    preset: Record<string, string>,
+    description: string,
+    shortcutKey?: string,
+  ) {
+    const emailSuffix = Math.floor(1000 + Math.random() * 9000);
+    const resolvedPreset: Record<string, string> = {};
+
+    Object.entries(preset).forEach(([name, value]) => {
+      const field = form.elements.namedItem(name);
+      const resolvedValue = value.replace("{rand}", String(emailSuffix));
+      resolvedPreset[name] = resolvedValue;
+
+      if (
+        field instanceof HTMLInputElement ||
+        field instanceof HTMLSelectElement
+      ) {
+        field.value = resolvedValue;
+
+        if (name === "cooperativeName") {
+          setCooperativeQuery(resolvedValue);
+        }
+      }
+    });
+
+    if (shortcutKey && autofillMemoryMode === "register") {
+      window.localStorage.setItem(
+        `scresh:auth-shortcut:${shortcutKey}`,
+        JSON.stringify(resolvedPreset),
+      );
+    }
+
+    toast.info("Form terisi.", { description });
+  }
+
   return (
     <form
       action={formAction}
       className="flex w-full flex-col gap-8 bg-white"
       noValidate
+      onKeyDown={(event) => {
+        const key = event.key.toLowerCase();
+
+        if (shortcutMode && autofillShortcuts?.[key]) {
+          event.preventDefault();
+          const storedPreset =
+            autofillMemoryMode === "login"
+              ? window.localStorage.getItem(`scresh:auth-shortcut:${key}`)
+              : null;
+          const rememberedPreset = storedPreset
+            ? (JSON.parse(storedPreset) as Record<string, string>)
+            : null;
+
+          fillForm(
+            event.currentTarget,
+            rememberedPreset ?? autofillShortcuts[key],
+            rememberedPreset
+              ? `Data registrasi ${key.toUpperCase()} dipakai.`
+              : `Preset ${key.toUpperCase()} dipakai.`,
+            key,
+          );
+          setShortcutMode(false);
+          return;
+        }
+
+        if (shortcutMode && key !== "tab") {
+          setShortcutMode(false);
+        }
+
+        if (
+          event.key !== "Tab" ||
+          event.altKey ||
+          event.ctrlKey ||
+          event.metaKey ||
+          event.shiftKey ||
+          !autofillPresets?.length
+        ) {
+          return;
+        }
+
+        event.preventDefault();
+
+        if (autofillShortcuts) {
+          setShortcutMode(true);
+          toast.info("Pilih preset demo.", {
+            description: "Tekan P=Petugas, M=Manager, S=Supervisor, B=Bank.",
+          });
+          return;
+        }
+
+        const preset =
+          autofillPresets[Math.floor(Math.random() * autofillPresets.length)];
+        fillForm(event.currentTarget, preset, "Tekan submit untuk melanjutkan.");
+      }}
       onSubmit={(event) => {
         const form = event.currentTarget;
         const invalidField = Array.from(form.elements).find((element) => {
           return (
-            element instanceof HTMLInputElement ||
-            element instanceof HTMLSelectElement
-          ) && !element.validity.valid;
+            (element instanceof HTMLInputElement ||
+              element instanceof HTMLSelectElement) &&
+            !element.validity.valid
+          );
         }) as HTMLInputElement | HTMLSelectElement | undefined;
 
         if (!invalidField) {

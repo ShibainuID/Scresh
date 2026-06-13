@@ -1,10 +1,32 @@
 import Link from "next/link";
 import { registerAction } from "@/app/actions/auth";
 import { AuthForm } from "@/components/auth-form";
+import { Button } from "@/components/button";
 
 export default function RegisterPage() {
   return (
     <main className="relative min-h-screen bg-forest text-white md:grid md:grid-cols-[0.9fr_1.1fr]">
+      <Button
+        className="fixed left-6 top-6 z-[5] gap-2 bg-transparent px-0 text-white hover:brightness-100"
+        href="/"
+        size="sm"
+      >
+        <svg
+          aria-hidden="true"
+          className="h-4 w-4"
+          fill="none"
+          viewBox="0 0 24 24"
+        >
+          <path
+            d="M15 18l-6-6 6-6"
+            stroke="currentColor"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth="2"
+          />
+        </svg>
+        Kembali
+      </Button>
       <section className="fixed left-0 right-0 top-0 z-0 flex h-[30vh] flex-col justify-end px-8 pb-10 pt-10 md:sticky md:left-auto md:right-auto md:min-h-screen md:px-12 md:py-12">
         <div className="space-y-2">
           <h1 className="text-white">Registrasi</h1>
@@ -18,6 +40,76 @@ export default function RegisterPage() {
             title="Data Koperasi"
             description="Lengkapi profil koperasi dan petugas."
             action={registerAction}
+            autofillPresets={[
+              {
+                cooperativeName: "Koperasi Cabai Merapi",
+                cooperativeRegistrationNumber: "BH-3302-2026-044",
+                cooperativeAddress: "Jl. Kaliurang Km. 17",
+                cooperativeCity: "Sleman",
+                cooperativeProvince: "DI Yogyakarta",
+                cooperativeContactPhone: "081245670044",
+                commodityFocus: "Cabai merah, cabai rawit",
+                name: "Arif Wibowo",
+                email: "arif.merapi.{rand}@scresh.test",
+                password: "Password123",
+                role: "staff",
+              },
+            ]}
+            autofillMemoryMode="register"
+            autofillShortcuts={{
+              p: {
+                cooperativeName: "Koperasi Cabai Merapi",
+                cooperativeRegistrationNumber: "BH-3302-2026-044",
+                cooperativeAddress: "Jl. Kaliurang Km. 17",
+                cooperativeCity: "Sleman",
+                cooperativeProvince: "DI Yogyakarta",
+                cooperativeContactPhone: "081245670044",
+                commodityFocus: "Cabai merah, cabai rawit",
+                name: "Arif Wibowo",
+                email: "arif.merapi.{rand}@scresh.test",
+                password: "Password123",
+                role: "staff",
+              },
+              m: {
+                cooperativeName: "Koperasi Hortikultura Garut",
+                cooperativeRegistrationNumber: "BH-3205-2026-021",
+                cooperativeAddress: "Jl. Raya Samarang No. 18",
+                cooperativeCity: "Garut",
+                cooperativeProvince: "Jawa Barat",
+                cooperativeContactPhone: "081377882266",
+                commodityFocus: "Kentang, cabai, tomat",
+                name: "Nadia Putri",
+                email: "nadia.garut.{rand}@scresh.test",
+                password: "Password123",
+                role: "manager",
+              },
+              s: {
+                cooperativeName: "Koperasi Audit Pangan Priangan",
+                cooperativeRegistrationNumber: "BH-3273-2026-088",
+                cooperativeAddress: "Jl. Dinas Pangan No. 4",
+                cooperativeCity: "Bandung",
+                cooperativeProvince: "Jawa Barat",
+                cooperativeContactPhone: "082177880088",
+                commodityFocus: "Audit pinjaman dan stok pangan",
+                name: "Dewi Lestari",
+                email: "dewi.audit.{rand}@scresh.test",
+                password: "Password123",
+                role: "supervisor",
+              },
+              b: {
+                cooperativeName: "Koperasi Mitra KUR Nusantara",
+                cooperativeRegistrationNumber: "BH-3174-2026-031",
+                cooperativeAddress: "Jl. Sudirman Kav. 21",
+                cooperativeCity: "Jakarta",
+                cooperativeProvince: "DKI Jakarta",
+                cooperativeContactPhone: "081900220031",
+                commodityFocus: "Portfolio pembiayaan koperasi",
+                name: "Bagas Pranata",
+                email: "bagas.kur.{rand}@scresh.test",
+                password: "Password123",
+                role: "partner",
+              },
+            }}
             submitLabel="Sign Up"
             roleSelect
             fields={[
