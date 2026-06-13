@@ -3,6 +3,14 @@ import { requireRole } from "@/lib/auth/dal";
 import { services } from "@/lib/server/services/container";
 import type { AuditFilters } from "@/lib/server/repositories/supervisor-audit-repository";
 
+function escapeCsv(value: string | number): string {
+  const str = String(value).replace(/"/g, '""');
+  if (str.includes(",") || str.includes("\n") || str.includes('"')) {
+    return `"${str}"`;
+  }
+  return str;
+}
+
 export async function GET(request: NextRequest) {
   await requireRole(["supervisor", "admin"]);
 
@@ -36,7 +44,52 @@ export async function GET(request: NextRequest) {
   const maxAmount = searchParams.get("maxAmount");
   if (maxAmount) filters.maxAmount = Number(maxAmount);
 
-  const rows = await services.supervisorAudits.list(filters, 200);
+  const rows = await services.supervisorAudits.list(filters, 1000);
 
-  return NextResponse.json({ rows });
+  const headers = [
+    "Nomor Pinjaman",
+    "Koperasi",
+    "Anggota",
+    "Field",
+    "Sebelum",
+    "Sesudah",
+    "Aktor",
+    "Reviewer",
+    "Status",
+    "Risk Score",
+    "Alasan",
+    "Waktu Perubahan",
+  ];
+
+  const lines = [
+    headers.map(escapeCsv).join(","),
+    ...rows.map((row) =>
+      [
+        row.loan,
+        row.tenantName,
+        row.member,
+        row.field,
+        row.before,
+        row.after,
+        row.actor,
+        row.reviewer,
+        row.status,
+        row.risk,
+        row.reason,
+        row.changedAt.toISOString(),
+      ]
+        .map(escapeCsv)
+        .join(","),
+    ),
+  ];
+
+  const csv = lines.join("\n");
+  const filename = `audit-report-${new Date().toISOString().slice(0, 10)}.csv`;
+
+  return new NextResponse(csv, {
+    headers: {
+      "Content-Type": "text/csv;charset=utf-8",
+      "Content-Disposition": `attachment; filename="${filename}"`,
+    },
+  });
 }

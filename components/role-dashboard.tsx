@@ -1,4 +1,5 @@
 import Link from "next/link";
+import type { ReactNode } from "react";
 import {
   BadgeCheck,
   Boxes,
@@ -45,6 +46,7 @@ type DashboardWidget = {
   metrics?: DashboardMetric[];
   actions?: DashboardAction[];
   cta?: DashboardCta;
+  content?: ReactNode;
   span?: "half" | "full";
   tone?: "white" | "forest" | "orange";
 };
@@ -57,6 +59,7 @@ type RoleDashboardProps = {
   location: string;
   activeModule: string;
   widgets: DashboardWidget[];
+  headerRight?: ReactNode;
 };
 
 type RoleNavItem = {
@@ -68,45 +71,45 @@ type RoleNavItem = {
 
 const roleNavItems: Record<Role, RoleNavItem[]> = {
   staff: [
-    { label: "Home", href: "/staff", icon: "home" },
-    { label: "Scresh", href: "/staff/scan", icon: "scresh", featured: true },
+    // { label: "Home", href: "/staff", icon: "home" },
     { label: "Stock", href: "/staff/batches", icon: "stock" },
+    { label: "Scresh", href: "/staff/scan", icon: "scresh", featured: true },
     { label: "Distribusi", href: "/staff/movements", icon: "tasks" },
   ],
   credit: [
-    { label: "Home", icon: "home" },
+    // { label: "Home", icon: "home" },
     { label: "Members", href: "/credit", icon: "members" },
     { label: "Risk", href: "/credit", icon: "loans", featured: true },
     { label: "Sharing", href: "/credit", icon: "verified" },
   ],
   manager: [
-    { label: "Home", icon: "home" },
-    { label: "Scresh", href: "/manager", icon: "scresh" },
+    // { label: "Home", icon: "home" },
+    // { label: "Scresh", href: "/manager", icon: "scresh" },
     { label: "Credit", href: "/manager", icon: "loans" },
-    { label: "Approvals", href: "/manager", icon: "approval" },
+    { label: "Approvals", href: "/manager", icon: "approval", featured: true },
     { label: "Reports", href: "/manager", icon: "reports" },
   ],
   supervisor: [
-    { label: "Home", icon: "home" },
-    { label: "Loans", href: "/supervisor", icon: "loans" },
+    // { label: "Home", icon: "home" },
+    // { label: "Loans", href: "/supervisor", icon: "loans" },
+    { label: "Flags", href: "/supervisor/audit", icon: "shield" },
     {
       label: "Audit",
       href: "/supervisor/audit",
       icon: "audit",
       featured: true,
     },
-    { label: "Flags", href: "/supervisor", icon: "shield" },
-    { label: "Reports", href: "/supervisor", icon: "reports" },
+    { label: "Reports", href: "/supervisor/audit", icon: "reports" },
   ],
   partner: [
-    { label: "Home", icon: "home" },
+    // { label: "Home", icon: "home" },
     { label: "Portfolio", href: "/partner", icon: "portfolio" },
     { label: "Insight", href: "/partner", icon: "reports", featured: true },
     { label: "Financing", href: "/partner", icon: "financing" },
     { label: "Verified", href: "/partner", icon: "verified" },
   ],
   admin: [
-    { label: "Home", icon: "home" },
+    // { label: "Home", icon: "home" },
     { label: "Users", href: "/admin", icon: "members" },
     { label: "Audit", href: "/admin", icon: "audit", featured: true },
     { label: "Approvals", href: "/admin", icon: "approval" },
@@ -122,12 +125,13 @@ export function RoleDashboard({
   location,
   activeModule,
   widgets,
+  headerRight,
 }: RoleDashboardProps) {
   return (
     <main className="min-h-screen bg-gradient-to-b from-white via-[#effbd6] to-lime pb-28 text-forest">
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-5 py-7 md:px-8">
         <aside>
-          <DashboardHeader session={session} />
+          <DashboardHeader session={session} right={headerRight} />
           <IdentityCard
             activeModule={activeModule}
             cooperativeName={cooperativeName}
@@ -149,7 +153,13 @@ export function RoleDashboard({
   );
 }
 
-function DashboardHeader({ session }: { session: SessionPrincipal }) {
+function DashboardHeader({
+  session,
+  right,
+}: {
+  session: SessionPrincipal;
+  right?: ReactNode;
+}) {
   return (
     <header className="mb-7 flex items-center justify-between gap-4">
       <div className="flex min-w-0 items-center gap-3">
@@ -165,6 +175,7 @@ function DashboardHeader({ session }: { session: SessionPrincipal }) {
       </div>
 
       <div className="flex items-center gap-3">
+        {right}
         <IconButton label="Kalender" icon="calendar" />
         <LogoutButton />
       </div>
@@ -219,7 +230,9 @@ function WidgetCard({ widget }: { widget: DashboardWidget }) {
         : "text-white/78";
 
   return (
-    <section className={widget.span === "full" ? "h-full sm:col-span-2" : "h-full"}>
+    <section
+      className={widget.span === "full" ? "h-full sm:col-span-2" : "h-full"}
+    >
       {widget.cta && !widget.metrics && !widget.actions ? (
         <Link
           className="flex h-full min-h-[140px] items-center justify-between gap-5 rounded-[28px] bg-white p-5 text-forest transition hover:brightness-[0.98]"
@@ -242,7 +255,9 @@ function WidgetCard({ widget }: { widget: DashboardWidget }) {
           />
         </Link>
       ) : (
-        <div className={`flex h-full min-h-[140px] flex-col rounded-[28px] p-5 ${toneClass}`}>
+        <div
+          className={`flex h-full min-h-[140px] flex-col rounded-[28px] p-5 ${toneClass}`}
+        >
           <div className="mb-5">
             <p className="font-sans text-2xl font-semibold leading-8 tracking-normal">
               {widget.title}
@@ -296,7 +311,9 @@ function WidgetCard({ widget }: { widget: DashboardWidget }) {
                   "rounded-[18px] bg-lime/35 px-4 py-3 text-left text-forest transition hover:bg-lime/55 focus:outline-none focus:ring-2 focus:ring-forest/20";
                 const content = (
                   <>
-                    <span className="block text-sm font-bold">{action.label}</span>
+                    <span className="block text-sm font-bold">
+                      {action.label}
+                    </span>
                     <span className="mt-1 block text-xs leading-4 text-forest/70">
                       {action.description}
                     </span>
@@ -304,16 +321,28 @@ function WidgetCard({ widget }: { widget: DashboardWidget }) {
                 );
 
                 return action.href ? (
-                  <Link className={className} href={action.href} key={action.label}>
+                  <Link
+                    className={className}
+                    href={action.href}
+                    key={action.label}
+                  >
                     {content}
                   </Link>
                 ) : (
-                  <button className={className} key={action.label} type="button">
+                  <button
+                    className={className}
+                    key={action.label}
+                    type="button"
+                  >
                     {content}
                   </button>
                 );
               })}
             </div>
+          ) : null}
+
+          {widget.content ? (
+            <div className="flex-1">{widget.content}</div>
           ) : null}
 
           {widget.cta ? (

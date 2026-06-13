@@ -449,6 +449,26 @@ where not exists (
     and al.resource_id = 'L-KMJ-202606-D' || lpad(series.n::text, 3, '0')
 );
 
+insert into notifications (user_id, type, title, message, resource_type, resource_id, is_read, created_at)
+select u.id, 'audit_anomaly', 'Anomali pinjaman terdeteksi', 'L-KMJ-202606-001 naik 200% dan memerlukan review.', 'loan', 'L-KMJ-202606-001', false, '2026-06-12 09:15:00+07'::timestamptz
+from users u
+where u.email = 'dina.supervisor@koperasi.id'
+  and not exists (
+    select 1 from notifications n
+    where n.user_id = u.id and n.resource_id = 'L-KMJ-202606-001'
+  );
+
+insert into audit_reviews (loan_id, reviewer_user_id, status, note, created_at)
+select l.id, u.id, 'needs_explanation', 'Perubahan nominal signifikan; minta dokumen pendukung kenaikan 200%.', '2026-06-12 09:25:00+07'::timestamptz
+from loans l
+join users u on u.email = 'dina.supervisor@koperasi.id'
+where l.loan_number = 'L-KMJ-202606-001'
+  and not exists (
+    select 1 from audit_reviews ar where ar.loan_id = l.id
+  );
+
+-- Additional change requests to demo dominant approver & recurring pair anomalies
+
 -- =============================================================================
 -- BULK DEMO DATA (100 records per judging scenario)
 -- =============================================================================
@@ -660,7 +680,40 @@ where n % 2 = 0
       end
   );
 
--- Scenario E: 100 loan change requests (pending / approved / rejected)
+-- Scenario E: loan change requests for the original 8 dummy loans
+insert into loan_change_requests (
+  loan_id,
+  requested_by_user_id,
+  reviewed_by_user_id,
+  field_name,
+  old_value,
+  new_value,
+  reason,
+  status,
+  reviewed_at,
+  created_at
+)
+select
+  l.id,
+  credit.id,
+  manager.id,
+  'principal_amount',
+  l.principal_amount::text,
+  (l.principal_amount * 1.1)::text,
+  'Penyesuaian nominal setelah verifikasi ulang.',
+  'approved',
+  ('2026-06-12 10:00:00+07'::timestamptz + (series.n || ' minutes')::interval),
+  ('2026-06-12 09:55:00+07'::timestamptz + (series.n || ' minutes')::interval)
+from generate_series(1, 8) as series(n)
+join loans l on l.loan_number = 'L-KMJ-202606-D' || lpad(series.n::text, 3, '0')
+join users credit on credit.email = 'rani.melati@koperasi.id'
+join users manager on manager.email = 'budi.melati@koperasi.id'
+where not exists (
+  select 1 from loan_change_requests lcr
+  where lcr.loan_id = l.id and lcr.requested_by_user_id = credit.id and lcr.reviewed_by_user_id = manager.id
+);
+
+-- Scenario E: 100 loan change requests for the bulk demo loans (pending / approved / rejected)
 insert into loan_change_requests (
   loan_id,
   requested_by_user_id,
@@ -707,7 +760,26 @@ where not exists (
   where lcr.loan_id = l.id and lcr.old_value = (5000000 + (n * 50000))::text
 );
 
--- Scenario E: 100 audit anomalies
+-- Consent & credit summary for cross-cooperative demo
+insert into member_consents (member_id, tenant_id, purpose, granted, granted_at, expires_at)
+select m.id, t.id, 'credit_summary', true, '2026-06-12 08:00:00+07'::timestamptz, '2027-06-12 08:00:00+07'::timestamptz
+from members m
+join tenants t on t.slug = 'koperasi-sayur-segar-lembang'
+where m.national_id = '3273010101800001'
+  and not exists (
+    select 1 from member_consents mc where mc.member_id = m.id and mc.tenant_id = t.id and mc.purpose = 'credit_summary'
+  );
+
+insert into credit_summaries (member_id, tenant_id, active_arrears_count, running_loan_count, on_time_ratio, risk_tier, last_updated)
+select m.id, t.id, 0, 1, 92.50, 'low', '2026-06-12 08:00:00+07'::timestamptz
+from members m
+join tenants t on t.slug = 'koperasi-sayur-segar-lembang'
+where m.national_id = '3273010101800001'
+  and not exists (
+    select 1 from credit_summaries cs where cs.member_id = m.id and cs.tenant_id = t.id
+  );
+
+-- Scenario E: 100 audit anomalies for the bulk demo loans
 insert into audit_anomalies (tenant_id, loan_id, risk_score, reason, status, created_at)
 select
   l.tenant_id,
@@ -738,7 +810,7 @@ where not exists (
   end
 );
 
--- Scenario E: 100 audit logs for loan changes and anomaly views
+-- Scenario E: 100 audit logs for bulk-demo loan changes and anomaly views
 insert into audit_logs (actor_user_id, action, resource_type, resource_id, metadata, created_at)
 select
   actor.id,
