@@ -10,9 +10,26 @@ create table if not exists tenants (
   id uuid primary key default gen_random_uuid(),
   name text not null,
   slug text not null unique,
+  legal_name text,
+  registration_number text,
+  address text,
+  city text,
+  province text,
+  contact_phone text,
+  commodity_focus text,
+  verification_status text not null default 'pending',
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
+
+alter table tenants add column if not exists legal_name text;
+alter table tenants add column if not exists registration_number text;
+alter table tenants add column if not exists address text;
+alter table tenants add column if not exists city text;
+alter table tenants add column if not exists province text;
+alter table tenants add column if not exists contact_phone text;
+alter table tenants add column if not exists commodity_focus text;
+alter table tenants add column if not exists verification_status text not null default 'pending';
 
 create table if not exists users (
   id uuid primary key default gen_random_uuid(),
@@ -51,6 +68,7 @@ create table if not exists audit_logs (
 );
 
 create index if not exists users_tenant_id_idx on users(tenant_id);
+create index if not exists tenants_name_idx on tenants using gin (to_tsvector('simple', name));
 create index if not exists sessions_user_id_idx on sessions(user_id);
 create index if not exists sessions_active_idx on sessions(id, expires_at) where revoked_at is null;
 create index if not exists audit_logs_actor_created_idx on audit_logs(actor_user_id, created_at desc);

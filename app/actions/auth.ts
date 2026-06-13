@@ -44,6 +44,15 @@ export async function registerAction(
     email: formData.get("email"),
     password: formData.get("password"),
     role: formData.get("role") || "staff",
+    cooperativeName: formData.get("cooperativeName"),
+    cooperativeLegalName:
+      formData.get("cooperativeLegalName") || formData.get("cooperativeName"),
+    cooperativeRegistrationNumber: formData.get("cooperativeRegistrationNumber"),
+    cooperativeAddress: formData.get("cooperativeAddress"),
+    cooperativeCity: formData.get("cooperativeCity"),
+    cooperativeProvince: formData.get("cooperativeProvince"),
+    cooperativeContactPhone: formData.get("cooperativeContactPhone"),
+    commodityFocus: formData.get("commodityFocus"),
   });
 
   if (!parsed.success) {

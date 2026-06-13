@@ -3,6 +3,7 @@ import "server-only";
 import { db } from "@/lib/server/db/client";
 import { AuditLogRepository } from "@/lib/server/repositories/audit-log-repository";
 import { SessionRepository } from "@/lib/server/repositories/session-repository";
+import { TenantRepository } from "@/lib/server/repositories/tenant-repository";
 import { UserRepository } from "@/lib/server/repositories/user-repository";
 import { AuthService } from "@/lib/server/services/auth-service";
 import { PasswordService } from "@/lib/server/services/password-service";
@@ -12,6 +13,7 @@ import { TokenService } from "@/lib/server/services/token-service";
 
 export class ServiceContainer {
   readonly users = new UserRepository(db);
+  readonly tenants = new TenantRepository(db);
   readonly sessions = new SessionRepository(db);
   readonly auditLogs = new AuditLogRepository(db);
   readonly passwords = new PasswordService();
@@ -19,6 +21,7 @@ export class ServiceContainer {
   readonly sessionService = new SessionService(this.sessions, this.tokens);
   readonly auth = new AuthService(
     this.users,
+    this.tenants,
     this.passwords,
     this.sessionService,
     this.auditLogs,
