@@ -233,7 +233,7 @@ function WidgetCard({ widget }: { widget: DashboardWidget }) {
     <section
       className={widget.span === "full" ? "h-full sm:col-span-2" : "h-full"}
     >
-      {widget.cta && !widget.metrics && !widget.actions ? (
+      {widget.cta && !widget.metrics && !widget.actions && !widget.content ? (
         <Link
           className="flex h-full min-h-[140px] items-center justify-between gap-5 rounded-[28px] bg-white p-5 text-forest transition hover:brightness-[0.98]"
           href={widget.cta.href}
