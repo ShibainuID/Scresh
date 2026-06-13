@@ -448,3 +448,73 @@ where not exists (
   where al.action = 'loan.audit_dummy'
     and al.resource_id = 'L-KMJ-202606-D' || lpad(series.n::text, 3, '0')
 );
+
+insert into notifications (user_id, type, title, message, resource_type, resource_id, is_read, created_at)
+select u.id, 'audit_anomaly', 'Anomali pinjaman terdeteksi', 'L-KMJ-202606-001 naik 200% dan memerlukan review.', 'loan', 'L-KMJ-202606-001', false, '2026-06-12 09:15:00+07'::timestamptz
+from users u
+where u.email = 'dina.supervisor@koperasi.id'
+  and not exists (
+    select 1 from notifications n
+    where n.user_id = u.id and n.resource_id = 'L-KMJ-202606-001'
+  );
+
+insert into audit_reviews (loan_id, reviewer_user_id, status, note, created_at)
+select l.id, u.id, 'needs_explanation', 'Perubahan nominal signifikan; minta dokumen pendukung kenaikan 200%.', '2026-06-12 09:25:00+07'::timestamptz
+from loans l
+join users u on u.email = 'dina.supervisor@koperasi.id'
+where l.loan_number = 'L-KMJ-202606-001'
+  and not exists (
+    select 1 from audit_reviews ar where ar.loan_id = l.id
+  );
+
+-- Additional change requests to demo dominant approver & recurring pair anomalies
+insert into loan_change_requests (
+  loan_id,
+  requested_by_user_id,
+  reviewed_by_user_id,
+  field_name,
+  old_value,
+  new_value,
+  reason,
+  status,
+  reviewed_at,
+  created_at
+)
+select
+  l.id,
+  credit.id,
+  manager.id,
+  'principal_amount',
+  l.principal_amount::text,
+  (l.principal_amount * 1.1)::text,
+  'Penyesuaian nominal setelah verifikasi ulang.',
+  'approved',
+  ('2026-06-12 10:00:00+07'::timestamptz + (series.n || ' minutes')::interval),
+  ('2026-06-12 09:55:00+07'::timestamptz + (series.n || ' minutes')::interval)
+from generate_series(1, 8) as series(n)
+join loans l on l.loan_number = 'L-KMJ-202606-D' || lpad(series.n::text, 3, '0')
+join users credit on credit.email = 'rani.melati@koperasi.id'
+join users manager on manager.email = 'budi.melati@koperasi.id'
+where not exists (
+  select 1 from loan_change_requests lcr
+  where lcr.loan_id = l.id and lcr.requested_by_user_id = credit.id and lcr.reviewed_by_user_id = manager.id
+);
+
+-- Consent & credit summary for cross-cooperative demo
+insert into member_consents (member_id, tenant_id, purpose, granted, granted_at, expires_at)
+select m.id, t.id, 'credit_summary', true, '2026-06-12 08:00:00+07'::timestamptz, '2027-06-12 08:00:00+07'::timestamptz
+from members m
+join tenants t on t.slug = 'koperasi-sayur-segar-lembang'
+where m.national_id = '3273010101800001'
+  and not exists (
+    select 1 from member_consents mc where mc.member_id = m.id and mc.tenant_id = t.id and mc.purpose = 'credit_summary'
+  );
+
+insert into credit_summaries (member_id, tenant_id, active_arrears_count, running_loan_count, on_time_ratio, risk_tier, last_updated)
+select m.id, t.id, 0, 1, 92.50, 'low', '2026-06-12 08:00:00+07'::timestamptz
+from members m
+join tenants t on t.slug = 'koperasi-sayur-segar-lembang'
+where m.national_id = '3273010101800001'
+  and not exists (
+    select 1 from credit_summaries cs where cs.member_id = m.id and cs.tenant_id = t.id
+  );
