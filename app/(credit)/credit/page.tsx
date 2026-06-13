@@ -1,8 +1,27 @@
 import { RoleDashboard } from "@/components/role-dashboard";
 import { requireRole } from "@/lib/auth/dal";
+import { services } from "@/lib/server/services/container";
 
 export default async function CreditPage() {
   const session = await requireRole(["credit", "manager", "admin"]);
+
+  if (!session.user.tenantId) {
+    return (
+      <main className="min-h-screen px-5 py-7 text-forest">
+        <p>Akun tidak terhubung ke koperasi.</p>
+      </main>
+    );
+  }
+
+  const [members, loanRows] = await Promise.all([
+    services.members.listByTenant(session.user.tenantId),
+    services.loans.listByTenant(session.user.tenantId),
+  ]);
+
+  const pendingReview = loanRows.filter((l) => l.status === "pending_review").length;
+  const lowRisk = loanRows.filter((l) => l.risk_tier === "low").length;
+  const mediumRisk = loanRows.filter((l) => l.risk_tier === "medium").length;
+  const highRisk = loanRows.filter((l) => l.risk_tier === "high").length;
 
   return (
     <RoleDashboard
@@ -14,51 +33,43 @@ export default async function CreditPage() {
       session={session}
       widgets={[
         {
-          title: "Assessment queue",
+          title: "Antrean Assessment",
           metrics: [
-            { label: "Pengajuan baru", value: "18" },
-            { label: "Menunggu profil", value: "5" },
-            { label: "Perlu review", value: "7" },
-            { label: "Siap diajukan", value: "6" },
+            { label: "Pengajuan aktif", value: String(loanRows.length) },
+            { label: "Menunggu review", value: String(pendingReview) },
+            { label: "Low risk", value: String(lowRisk) },
+            { label: "High risk", value: String(highRisk) },
           ],
         },
         {
-          title: "Credit risk tier",
-          metrics: [
-            { label: "Low risk", value: "11" },
-            { label: "Medium risk", value: "7" },
-            { label: "High risk", value: "2", status: "manager review" },
-            { label: "Auto eligible", value: "9" },
-          ],
-        },
-        {
-          title: "Profil anggota",
+          title: "Profil Anggota",
           span: "full",
           metrics: [
-            { label: "Identitas terverifikasi", value: "231" },
-            { label: "Anggota lintas koperasi", value: "34" },
-            { label: "Profil belum lengkap", value: "12" },
-            { label: "Consent aktif", value: "86%" },
+            { label: "Total anggota", value: String(members.length) },
+            { label: "Identitas terverifikasi", value: String(members.filter((m) => m.national_id).length) },
+            { label: "Low risk", value: String(lowRisk) },
+            { label: "Medium risk", value: String(mediumRisk) },
           ],
         },
         {
-          title: "Credit history",
-          span: "full",
-          metrics: [
-            { label: "On-time ratio", value: "92%" },
-            { label: "Active arrears", value: "3" },
-            { label: "Running loan count", value: "42" },
-            { label: "Exposure flagged", value: "5" },
-          ],
-        },
-        {
-          title: "Safe data sharing",
+          title: "Aksi Cepat",
           span: "full",
           actions: [
-            { label: "Isi pengajuan pinjaman", description: "Catat kebutuhan dan tujuan pembiayaan" },
-            { label: "Lihat credit summary", description: "Ringkasan lintas koperasi tanpa raw data" },
-            { label: "Minta consent", description: "Aktifkan izin berbagi data aman" },
-            { label: "Hitung risk score", description: "Rule-based Low / Medium / High" },
+            {
+              label: "Ajukan Pinjaman Baru",
+              description: "Catat kebutuhan dan tujuan pembiayaan anggota.",
+              href: "/credit/members",
+            },
+            {
+              label: "Lihat Daftar Pengajuan",
+              description: "Assessment queue dan status risk tier.",
+              href: "/credit/loans",
+            },
+            {
+              label: "Cari Anggota",
+              description: "Cek identitas, status, dan riwayat pinjaman.",
+              href: "/credit/members",
+            },
           ],
         },
       ]}
