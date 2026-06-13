@@ -31,7 +31,14 @@ export class RbacService {
   }
 
   getPrimaryHome(session: SessionPrincipal) {
-    const priority: Role[] = ["admin", "manager", "supervisor", "partner", "staff"];
+    const priority: Role[] = [
+      "admin",
+      "manager",
+      "supervisor",
+      "credit",
+      "partner",
+      "staff",
+    ];
     const sessionRoles = normalizeRoles(session.user.roles);
     const role = priority.find((candidate) => sessionRoles.includes(candidate));
     return role ? roleHomePath[role] : "/staff";

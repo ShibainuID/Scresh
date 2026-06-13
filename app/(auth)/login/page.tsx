@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ChevronLeft } from "lucide-react";
 import { loginAction } from "@/app/actions/auth";
 import { AuthForm } from "@/components/auth-form";
 import { Button } from "@/components/button";
@@ -11,20 +12,7 @@ export default function LoginPage() {
         href="/"
         size="sm"
       >
-        <svg
-          aria-hidden="true"
-          className="h-4 w-4"
-          fill="none"
-          viewBox="0 0 24 24"
-        >
-          <path
-            d="M15 18l-6-6 6-6"
-            stroke="currentColor"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth="2"
-          />
-        </svg>
+        <ChevronLeft aria-hidden="true" className="h-4 w-4" strokeWidth={2.25} />
         Kembali
       </Button>
       <section className="fixed left-0 right-0 top-0 z-0 flex h-[34vh] flex-col justify-end px-8 pb-12 pt-10 md:sticky md:left-auto md:right-auto md:min-h-screen md:px-12 md:py-12">
@@ -48,9 +36,9 @@ export default function LoginPage() {
             autofillMemoryMode="login"
             autofillShortcuts={{
               p: { email: "siti.melati@koperasi.id", password: "Password123" },
+              k: { email: "rani.melati@koperasi.id", password: "Password123" },
               m: { email: "budi.melati@koperasi.id", password: "Password123" },
               s: { email: "dina.supervisor@koperasi.id", password: "Password123" },
-              b: { email: "raka.partner@koperasi.id", password: "Password123" },
             }}
             submitLabel="Sign In"
             fields={[

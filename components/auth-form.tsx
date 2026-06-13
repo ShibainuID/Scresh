@@ -138,9 +138,9 @@ export function AuthForm({
       }
     });
 
-    if (shortcutKey && autofillMemoryMode === "register") {
+    if (shortcutKey && autofillMemoryMode) {
       window.localStorage.setItem(
-        `scresh:auth-shortcut:${shortcutKey}`,
+        `scresh:auth-shortcut:${autofillMemoryMode}:${shortcutKey}`,
         JSON.stringify(resolvedPreset),
       );
     }
@@ -189,9 +189,14 @@ export function AuthForm({
 
         if (shortcutMode && autofillShortcuts?.[key]) {
           event.preventDefault();
+
+          // Login shortcuts should always use the configured preset so they match
+          // seeded credentials. Register-mode presets are only remembered for reuse
+          // on the register form itself.
+          const hardcodedPreset = autofillShortcuts[key];
           const storedPreset =
-            autofillMemoryMode === "login"
-              ? window.localStorage.getItem(`scresh:auth-shortcut:${key}`)
+            autofillMemoryMode === "login" && !hardcodedPreset
+              ? window.localStorage.getItem(`scresh:auth-shortcut:login:${key}`)
               : null;
           const rememberedPreset = storedPreset
             ? (JSON.parse(storedPreset) as Record<string, string>)
@@ -206,7 +211,7 @@ export function AuthForm({
 
           fillForm(
             event.currentTarget,
-            usableRememberedPreset ?? autofillShortcuts[key],
+            usableRememberedPreset ?? hardcodedPreset,
             key,
           );
           setShortcutMode(false);
@@ -338,9 +343,9 @@ export function AuthForm({
               defaultValue="staff"
             >
               <option value="staff">Staff</option>
+              <option value="credit">Petugas Kredit</option>
               <option value="manager">Manager</option>
               <option value="supervisor">Supervisor</option>
-              <option value="partner">Partner</option>
             </select>
           </label>
         ) : null}

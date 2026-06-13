@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ChevronLeft } from "lucide-react";
 import { registerAction } from "@/app/actions/auth";
 import { AuthForm } from "@/components/auth-form";
 import { Button } from "@/components/button";
@@ -11,20 +12,7 @@ export default function RegisterPage() {
         href="/"
         size="sm"
       >
-        <svg
-          aria-hidden="true"
-          className="h-4 w-4"
-          fill="none"
-          viewBox="0 0 24 24"
-        >
-          <path
-            d="M15 18l-6-6 6-6"
-            stroke="currentColor"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth="2"
-          />
-        </svg>
+        <ChevronLeft aria-hidden="true" className="h-4 w-4" strokeWidth={2.25} />
         Kembali
       </Button>
       <section className="fixed left-0 right-0 top-0 z-0 flex h-[30vh] flex-col justify-end px-8 pb-10 pt-10 md:sticky md:left-auto md:right-auto md:min-h-screen md:px-12 md:py-12">
@@ -83,6 +71,19 @@ export default function RegisterPage() {
                 password: "Password123",
                 role: "manager",
               },
+              k: {
+                cooperativeName: "Koperasi Melati Jaya",
+                cooperativeRegistrationNumber: "BH-3273-2026-117",
+                cooperativeAddress: "Jl. Melati Raya No. 17",
+                cooperativeCity: "Bandung",
+                cooperativeProvince: "Jawa Barat",
+                cooperativeContactPhone: "081245671117",
+                commodityFocus: "Sayur segar, cabai, tomat",
+                name: "Rani Prameswari",
+                email: "rani.melati.{rand}@koperasi.id",
+                password: "Password123",
+                role: "credit",
+              },
               s: {
                 cooperativeName: "Koperasi Melati Jaya",
                 cooperativeRegistrationNumber: "BH-3273-2026-117",
@@ -95,19 +96,6 @@ export default function RegisterPage() {
                 email: "dewi.supervisor.{rand}@koperasi.id",
                 password: "Password123",
                 role: "supervisor",
-              },
-              b: {
-                cooperativeName: "Koperasi Melati Jaya",
-                cooperativeRegistrationNumber: "BH-3273-2026-117",
-                cooperativeAddress: "Jl. Melati Raya No. 17",
-                cooperativeCity: "Bandung",
-                cooperativeProvince: "Jawa Barat",
-                cooperativeContactPhone: "081245671117",
-                commodityFocus: "Sayur segar, cabai, tomat",
-                name: "Bagas Pranata",
-                email: "bagas.partner.{rand}@koperasi.id",
-                password: "Password123",
-                role: "partner",
               },
             }}
             submitLabel="Sign Up"

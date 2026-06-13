@@ -1,7 +1,13 @@
 create extension if not exists pgcrypto;
 
 do $$ begin
-  create type app_role as enum ('staff', 'manager', 'supervisor', 'partner', 'admin');
+  create type app_role as enum ('staff', 'credit', 'manager', 'supervisor', 'partner', 'admin');
+exception
+  when duplicate_object then null;
+end $$;
+
+do $$ begin
+  alter type app_role add value if not exists 'credit';
 exception
   when duplicate_object then null;
 end $$;
@@ -126,14 +132,27 @@ create table if not exists scresh_batches (
   supplier_name text not null,
   claimed_weight_kg numeric(12, 2) not null,
   actual_weight_kg numeric(12, 2) not null,
-  freshness_grade text not null,
-  confidence_score numeric(5, 2) not null,
-  shelf_life_hours integer not null,
+  remaining_weight_kg numeric(12, 2) not null,
+  buy_price_per_kg numeric(12, 2) not null default 0,
+  sample_photo_url text,
+  freshness_grade text not null default 'pending',
+  confidence_score numeric(5, 2) not null default 0,
+  shelf_life_hours integer not null default 0,
   storage_location text,
   distribution_priority integer not null default 99,
   status text not null default 'in_storage',
   created_at timestamptz not null default now()
 );
+
+alter table scresh_batches add column if not exists remaining_weight_kg numeric(12, 2);
+alter table scresh_batches add column if not exists buy_price_per_kg numeric(12, 2) not null default 0;
+alter table scresh_batches add column if not exists sample_photo_url text;
+
+-- Backfill remaining_weight_kg from actual_weight_kg where previously null.
+update scresh_batches set remaining_weight_kg = actual_weight_kg where remaining_weight_kg is null;
+
+-- Ensure remaining_weight_kg is non-null going forward.
+alter table scresh_batches alter column remaining_weight_kg set not null;
 
 create table if not exists scresh_movements (
   id uuid primary key default gen_random_uuid(),
