@@ -307,7 +307,7 @@ export function ScanFlow({ targetBatch }: ScanFlowProps) {
             <label className="mt-5 grid gap-2 text-sm font-semibold">
               Komoditas
               <select
-                className="h-12 rounded-[14px] bg-surface px-4 text-base text-forest outline-none ring-1 ring-forest/15 focus:ring-2 focus:ring-violet-600"
+                className="h-12 rounded-[14px] bg-white px-4 text-base text-forest outline-none ring-1 ring-forest/20 focus:ring-2 focus:ring-violet-600"
                 disabled={Boolean(targetBatch)}
                 onChange={(event) => setCommodity(event.target.value)}
                 value={commodity}
