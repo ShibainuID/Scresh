@@ -12,9 +12,17 @@ type Props = {
   params: Promise<{ loanId: string }>;
 };
 
+function isValidUuid(value: string): boolean {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
+}
+
 export default async function AuditDetailPage({ params }: Props) {
   const session = await requireRole(["supervisor", "admin"]);
   const { loanId } = await params;
+
+  if (!isValidUuid(loanId)) {
+    notFound();
+  }
 
   const [loan, versions, changeRequests, reviews, anomaly] = await Promise.all([
     services.loans.getLoanDetail(loanId),

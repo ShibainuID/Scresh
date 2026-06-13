@@ -44,6 +44,27 @@ export async function registerBatchAction(
     return { message: "Berat dan harga harus lebih dari 0." };
   }
 
+  const scanGrade = String(formData.get("scanGrade") ?? "").toUpperCase();
+  const scanConfidencePercent = Number(
+    formData.get("scanConfidencePercent"),
+  );
+  const scanShelfLifeDays = Number(formData.get("scanShelfLifeDays"));
+  const hasScanDraft = Boolean(scanGrade);
+
+  if (
+    hasScanDraft &&
+    (
+      !["A", "B", "C", "D"].includes(scanGrade) ||
+      !Number.isFinite(scanConfidencePercent) ||
+      scanConfidencePercent < 0 ||
+      scanConfidencePercent > 100 ||
+      !Number.isFinite(scanShelfLifeDays) ||
+      scanShelfLifeDays < 0
+    )
+  ) {
+    return { message: "Data hasil scan tidak valid." };
+  }
+
   let samplePhotoUrl: string | null = null;
 
   if (photo && photo.size > 0) {
@@ -56,6 +77,7 @@ export async function registerBatchAction(
     samplePhotoUrl = `/uploads/batches/${fileName}`;
   }
 
+  let batchId: string;
   try {
     const batch = await services.scresh.registerBatch({
       tenantId: session.user.tenantId,
@@ -69,9 +91,18 @@ export async function registerBatchAction(
       samplePhotoUrl,
       storageLocation,
     });
+    batchId = batch.id;
 
     revalidatePath("/staff/batches");
-    redirect(`/staff/batches/${batch.id}/scan`);
+    if (hasScanDraft) {
+      await services.scresh.scanFreshness({
+        tenantId: session.user.tenantId,
+        batchId: batch.id,
+        grade: scanGrade,
+        confidenceScore: scanConfidencePercent,
+        shelfLifeHours: scanShelfLifeDays * 24,
+      });
+    }
   } catch (error) {
     return {
       message:
@@ -80,6 +111,12 @@ export async function registerBatchAction(
           : "Terjadi kesalahan saat mendaftarkan batch.",
     };
   }
+
+  redirect(
+    hasScanDraft
+      ? `/staff/batches/${batchId}/tag`
+      : `/staff/batches/${batchId}/scan`,
+  );
 }
 
 export async function scanFreshnessAction(

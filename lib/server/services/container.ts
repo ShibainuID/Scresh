@@ -19,6 +19,7 @@ import { CreditAssessmentService } from "@/lib/server/services/credit-assessment
 import { LoanApplicationService } from "@/lib/server/services/loan-application-service";
 import { LoanApprovalService } from "@/lib/server/services/loan-approval-service";
 import { AuthService } from "@/lib/server/services/auth-service";
+import { LoanService } from "@/lib/server/services/loan-service";
 import { PasswordService } from "@/lib/server/services/password-service";
 import { RbacService } from "@/lib/server/services/rbac-service";
 import { ScreshService } from "@/lib/server/services/scresh-service";
@@ -32,9 +33,9 @@ export class ServiceContainer {
   readonly sessions = new SessionRepository(db);
   readonly auditLogs = new AuditLogRepository(db);
   readonly supervisorAudits = new SupervisorAuditRepository(db);
+  readonly loans = new LoanRepository(db);
   readonly screshBatches = new ScreshBatchRepository(db);
   readonly screshMovements = new ScreshMovementRepository(db);
-  readonly loans = new LoanRepository(db);
   readonly members = new MemberRepository(db);
   readonly notifications = new NotificationRepository(db);
   readonly auditReviews = new AuditReviewRepository(db);
@@ -51,6 +52,7 @@ export class ServiceContainer {
     this.auditLogs,
   );
   readonly rbac = new RbacService();
+  readonly loanService = new LoanService(this.loans);
   readonly scresh = new ScreshService(
     this.screshBatches,
     this.screshMovements,

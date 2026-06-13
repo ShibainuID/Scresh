@@ -4,7 +4,7 @@ import type { Database } from "@/lib/server/db/client";
 
 export type SupervisorAuditRow = {
   id: string;
-  loanId: string;
+  loanId: string | null;
   loan: string;
   tenantId: string;
   tenantName: string;

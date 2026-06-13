@@ -36,12 +36,16 @@ export function AuditTable({ rows }: { rows: SupervisorAuditRow[] }) {
                 className="transition hover:bg-lime/30"
               >
                 <td className="px-4 py-3">
-                  <Link
-                    className="font-semibold text-forest underline underline-offset-4 hover:text-forest/80"
-                    href={`/supervisor/audit/${row.loanId}`}
-                  >
-                    {row.loan}
-                  </Link>
+                  {row.loanId ? (
+                    <Link
+                      className="font-semibold text-forest underline underline-offset-4 hover:text-forest/80"
+                      href={`/supervisor/audit/${row.loanId}`}
+                    >
+                      {row.loan}
+                    </Link>
+                  ) : (
+                    <span className="font-semibold text-forest">{row.loan}</span>
+                  )}
                 </td>
                 <td className="px-4 py-3 text-forest/80">{row.tenantName}</td>
                 <td className="px-4 py-3 capitalize">{row.field.replace(/_/g, " ")}</td>
@@ -72,8 +76,8 @@ export function AuditTable({ rows }: { rows: SupervisorAuditRow[] }) {
         {rows.map((row) => (
           <Link
             key={row.id}
-            className="block p-4 transition hover:bg-lime/30"
-            href={`/supervisor/audit/${row.loanId}`}
+            className={`block p-4 transition hover:bg-lime/30 ${!row.loanId ? "pointer-events-none" : ""}`}
+            href={row.loanId ? `/supervisor/audit/${row.loanId}` : "#"}
           >
             <div className="flex items-center justify-between">
               <span className="font-sans font-semibold text-forest">{row.loan}</span>

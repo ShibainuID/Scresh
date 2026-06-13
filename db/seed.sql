@@ -468,6 +468,219 @@ where l.loan_number = 'L-KMJ-202606-001'
   );
 
 -- Additional change requests to demo dominant approver & recurring pair anomalies
+
+-- =============================================================================
+-- BULK DEMO DATA (100 records per judging scenario)
+-- =============================================================================
+
+-- Scenario A: cross-cooperative member for credit-summary demo
+insert into members (tenant_id, full_name, national_id, phone, commodity_focus, membership_status)
+select t.id, 'Bu Rina Supplier Tomat', '3273014102850002', '082222222222', 'Tomat', 'active'
+from tenants t
+where t.slug = 'koperasi-sayur-segar-lembang'
+  and not exists (
+    select 1 from members m where m.tenant_id = t.id and m.national_id = '3273014102850002'
+  );
+
+-- Scenario A: 100 financing applications (pending / approved / rejected)
+insert into loans (
+  tenant_id,
+  member_id,
+  requested_by_user_id,
+  approved_by_user_id,
+  loan_number,
+  principal_amount,
+  purpose,
+  risk_tier,
+  status,
+  approved_at
+)
+select
+  t.id,
+  m.id,
+  credit.id,
+  case
+    when n <= 60 then null
+    when n <= 90 then manager.id
+    else null
+  end,
+  'L-KMJ-A-' || lpad(n::text, 3, '0'),
+  (5000000 + (n * 100000))::numeric(14, 2),
+  case n % 4
+    when 0 then 'Modal kerja pembelian sayur anggota'
+    when 1 then 'Dana distribusi hasil panen'
+    when 2 then 'Pembelian kemasan dan cold-storage'
+    else 'Pembiayaan operasional koperasi'
+  end,
+  case
+    when n % 7 = 0 then 'high'
+    when n % 3 = 0 then 'medium'
+    else 'low'
+  end,
+  case
+    when n <= 60 then 'pending_review'
+    when n <= 90 then 'approved'
+    else 'rejected'
+  end,
+  case
+    when n <= 60 then null
+    when n <= 90 then '2026-06-13 10:00:00+07'::timestamptz + (n || ' minutes')::interval
+    else null
+  end
+from generate_series(1, 100) as n
+join tenants t on t.slug = 'koperasi-melati-jaya'
+join lateral (
+  select m.id
+  from members m
+  where m.tenant_id = t.id
+  order by m.full_name
+  offset ((n - 1) % 2)
+  limit 1
+) m on true
+join users credit on credit.email = 'rani.melati@koperasi.id'
+join users manager on manager.email = 'budi.melati@koperasi.id'
+on conflict (loan_number) do update
+set
+  member_id = excluded.member_id,
+  requested_by_user_id = excluded.requested_by_user_id,
+  approved_by_user_id = excluded.approved_by_user_id,
+  principal_amount = excluded.principal_amount,
+  purpose = excluded.purpose,
+  risk_tier = excluded.risk_tier,
+  status = excluded.status,
+  approved_at = excluded.approved_at,
+  updated_at = now();
+
+-- Scenario A: baseline versions for the 100 financing loans
+insert into loan_versions (loan_id, version_number, principal_amount, change_reason, changed_by_user_id, created_at)
+select l.id, 1, l.principal_amount, 'Pengajuan awal petugas kredit', u.id, l.created_at
+from loans l
+join users u on u.email = 'rani.melati@koperasi.id'
+where l.loan_number like 'L-KMJ-A-%'
+  and not exists (
+    select 1 from loan_versions lv where lv.loan_id = l.id and lv.version_number = 1
+  );
+
+-- Scenario C: 100 Scresh batches
+insert into scresh_batches (
+  tenant_id,
+  registered_by_user_id,
+  batch_code,
+  commodity,
+  supplier_name,
+  claimed_weight_kg,
+  actual_weight_kg,
+  remaining_weight_kg,
+  buy_price_per_kg,
+  freshness_grade,
+  confidence_score,
+  shelf_life_hours,
+  storage_location,
+  distribution_priority,
+  status,
+  created_at
+)
+select
+  t.id,
+  staff.id,
+  'KMJ-SC-' || lpad(n::text, 3, '0'),
+  case n % 5
+    when 0 then 'Cabai Merah'
+    when 1 then 'Tomat'
+    when 2 then 'Selada'
+    when 3 then 'Kentang'
+    else 'Bawang Merah'
+  end,
+  m.full_name,
+  (1000 + (n * 10))::numeric(12, 2),
+  (1000 + (n * 10) - case when n % 6 = 0 then 120 else 0 end)::numeric(12, 2),
+  (1000 + (n * 10) - case when n % 6 = 0 then 120 else 0 end)::numeric(12, 2),
+  (10000 + (n * 500))::numeric(12, 2),
+  case
+    when n % 8 = 0 then 'pending'
+    when n % 4 = 0 then 'A'
+    when n % 4 = 1 then 'B'
+    when n % 4 = 2 then 'C'
+    else 'D'
+  end,
+  case
+    when n % 8 = 0 then 0
+    else 75 + (n % 25)
+  end,
+  case
+    when n % 4 = 0 then 120
+    when n % 4 = 1 then 72
+    when n % 4 = 2 then 24
+    else 8
+  end,
+  case
+    when n % 8 = 0 then null
+    else 'Cold Room ' || chr(65 + (n % 3)) || '-' || lpad(((n % 10) + 1)::text, 2, '0')
+  end,
+  case
+    when n % 8 = 0 then 50
+    when n % 4 in (2, 3) then 1
+    else 99 - n
+  end,
+  case
+    when n % 8 = 0 then 'pending_scan'
+    when n % 6 = 0 then 'weight_discrepancy'
+    when n % 4 in (2, 3) then 'priority_distribution'
+    else 'in_storage'
+  end,
+  '2026-06-13 06:00:00+07'::timestamptz + (n || ' minutes')::interval
+from generate_series(1, 100) as n
+join tenants t on t.slug = 'koperasi-melati-jaya'
+join users staff on staff.email = 'siti.melati@koperasi.id'
+join lateral (
+  select m.id, m.full_name
+  from members m
+  where m.tenant_id = t.id
+  order by m.full_name
+  offset ((n - 1) % 2)
+  limit 1
+) m on true
+on conflict (batch_code) do update
+set
+  actual_weight_kg = excluded.actual_weight_kg,
+  remaining_weight_kg = excluded.remaining_weight_kg,
+  buy_price_per_kg = excluded.buy_price_per_kg,
+  freshness_grade = excluded.freshness_grade,
+  confidence_score = excluded.confidence_score,
+  shelf_life_hours = excluded.shelf_life_hours,
+  storage_location = excluded.storage_location,
+  distribution_priority = excluded.distribution_priority,
+  status = excluded.status;
+
+-- Scenario C: outbound movements for half of the generated batches
+insert into scresh_movements (batch_id, moved_by_user_id, movement_type, quantity_kg, destination, notes, created_at)
+select
+  b.id,
+  staff.id,
+  'distribution',
+  (200 + (n * 5))::numeric(12, 2),
+  case n % 3
+    when 0 then 'Pasar Mitra Ciroyom'
+    when 1 then 'Offtaker Resto Bandung'
+    else 'Gudang Cabang Cimahi'
+  end,
+  'Distribusi otomatis dari seeding scenario C',
+  '2026-06-13 12:00:00+07'::timestamptz + (n || ' minutes')::interval
+from generate_series(1, 100) as n
+join scresh_batches b on b.batch_code = 'KMJ-SC-' || lpad(n::text, 3, '0')
+join users staff on staff.email = 'siti.melati@koperasi.id'
+where n % 2 = 0
+  and not exists (
+    select 1 from scresh_movements sm
+    where sm.batch_id = b.id
+      and sm.destination = case n % 3
+        when 0 then 'Pasar Mitra Ciroyom'
+        when 1 then 'Offtaker Resto Bandung'
+        else 'Gudang Cabang Cimahi'
+      end
+  );
+
+-- Scenario E: loan change requests for the original 8 dummy loans
 insert into loan_change_requests (
   loan_id,
   requested_by_user_id,
@@ -500,6 +713,53 @@ where not exists (
   where lcr.loan_id = l.id and lcr.requested_by_user_id = credit.id and lcr.reviewed_by_user_id = manager.id
 );
 
+-- Scenario E: 100 loan change requests for the bulk demo loans (pending / approved / rejected)
+insert into loan_change_requests (
+  loan_id,
+  requested_by_user_id,
+  reviewed_by_user_id,
+  field_name,
+  old_value,
+  new_value,
+  reason,
+  status,
+  reviewed_at,
+  created_at
+)
+select
+  l.id,
+  credit.id,
+  case
+    when n % 3 = 0 then null
+    else manager.id
+  end,
+  'principal_amount',
+  (5000000 + (n * 50000))::text,
+  (10000000 + (n * 100000))::text,
+  case n % 3
+    when 0 then 'Petugas kredit mengajukan revisi nilai pinjaman, menunggu approval manager.'
+    when 1 then 'Perubahan nilai disetujui manager setelah verifikasi stok.'
+    else 'Perubahan nilai ditolak karena risiko tinggi.'
+  end,
+  case n % 3
+    when 0 then 'pending'
+    when 1 then 'approved'
+    else 'rejected'
+  end,
+  case
+    when n % 3 = 0 then null
+    else '2026-06-13 11:00:00+07'::timestamptz + (n || ' minutes')::interval
+  end,
+  '2026-06-13 10:00:00+07'::timestamptz + (n || ' minutes')::interval
+from generate_series(1, 100) as n
+join loans l on l.loan_number = 'L-KMJ-A-' || lpad(n::text, 3, '0')
+join users credit on credit.email = 'rani.melati@koperasi.id'
+join users manager on manager.email = 'budi.melati@koperasi.id'
+where not exists (
+  select 1 from loan_change_requests lcr
+  where lcr.loan_id = l.id and lcr.old_value = (5000000 + (n * 50000))::text
+);
+
 -- Consent & credit summary for cross-cooperative demo
 insert into member_consents (member_id, tenant_id, purpose, granted, granted_at, expires_at)
 select m.id, t.id, 'credit_summary', true, '2026-06-12 08:00:00+07'::timestamptz, '2027-06-12 08:00:00+07'::timestamptz
@@ -518,3 +778,74 @@ where m.national_id = '3273010101800001'
   and not exists (
     select 1 from credit_summaries cs where cs.member_id = m.id and cs.tenant_id = t.id
   );
+
+-- Scenario E: 100 audit anomalies for the bulk demo loans
+insert into audit_anomalies (tenant_id, loan_id, risk_score, reason, status, created_at)
+select
+  l.tenant_id,
+  l.id,
+  case
+    when n % 10 = 0 then 95
+    when n % 5 = 0 then 78
+    when n % 3 = 0 then 64
+    else 42
+  end,
+  case
+    when n % 10 = 0 then 'Nilai pinjaman naik signifikan sebelum pencairan.'
+    when n % 5 = 0 then 'Persetujuan dilakukan terlalu cepat setelah pengajuan.'
+    when n % 3 = 0 then 'Riwayat perubahan pinjaman menunjukkan pola tidak wajar.'
+    else 'Perubahan data pinjaman tercatat dalam audit trail.'
+  end,
+  case when n % 4 = 0 then 'resolved' else 'open' end,
+  '2026-06-13 09:00:00+07'::timestamptz + (n || ' minutes')::interval
+from generate_series(1, 100) as n
+join loans l on l.loan_number = 'L-KMJ-A-' || lpad(n::text, 3, '0')
+where not exists (
+  select 1 from audit_anomalies aa
+  where aa.loan_id = l.id and aa.reason = case
+    when n % 10 = 0 then 'Nilai pinjaman naik signifikan sebelum pencairan.'
+    when n % 5 = 0 then 'Persetujuan dilakukan terlalu cepat setelah pengajuan.'
+    when n % 3 = 0 then 'Riwayat perubahan pinjaman menunjukkan pola tidak wajar.'
+    else 'Perubahan data pinjaman tercatat dalam audit trail.'
+  end
+);
+
+-- Scenario E: 100 audit logs for bulk-demo loan changes and anomaly views
+insert into audit_logs (actor_user_id, action, resource_type, resource_id, metadata, created_at)
+select
+  actor.id,
+  case n % 3
+    when 0 then 'loan.change_requested'
+    when 1 then 'loan.change_approved'
+    else 'audit.anomaly_viewed'
+  end,
+  'loan',
+  'L-KMJ-A-' || lpad(n::text, 3, '0'),
+  jsonb_build_object(
+    'useCase', case n % 3
+      when 0 then 'Petugas kredit mengajukan perubahan nilai pinjaman'
+      when 1 then 'Manager menyetujui perubahan nilai pinjaman'
+      else 'Supervisor meninjau anomali pinjaman'
+    end,
+    'riskScore', case
+      when n % 10 = 0 then 95
+      when n % 5 = 0 then 78
+      else 42
+    end
+  ),
+  '2026-06-13 08:00:00+07'::timestamptz + (n || ' minutes')::interval
+from generate_series(1, 100) as n
+join users actor on actor.email = case n % 3
+  when 0 then 'rani.melati@koperasi.id'
+  when 1 then 'budi.melati@koperasi.id'
+  else 'dina.supervisor@koperasi.id'
+end
+where not exists (
+  select 1 from audit_logs al
+  where al.action = case n % 3
+    when 0 then 'loan.change_requested'
+    when 1 then 'loan.change_approved'
+    else 'audit.anomaly_viewed'
+  end
+    and al.resource_id = 'L-KMJ-A-' || lpad(n::text, 3, '0')
+);
