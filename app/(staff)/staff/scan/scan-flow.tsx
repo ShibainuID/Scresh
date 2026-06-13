@@ -3,30 +3,71 @@
 import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { ArrowLeft, CameraOff } from "lucide-react";
+import {
+  ArrowLeft,
+  Camera,
+  CameraOff,
+  LoaderCircle,
+  RotateCcw,
+  ScanLine,
+} from "lucide-react";
 import { scanFreshnessAction } from "@/app/actions/scresh";
 import { BarcodeDisplay } from "@/components/barcode-display";
 import type { ScreshBatchRow } from "@/lib/server/repositories/scresh-batch-repository";
+import {
+  maskDataUrl,
+  parseScanResult,
+  type ScanResult,
+} from "./scan-result";
 
-const gradeOptions: Record<string, { label: string; confidence: number; shelfLifeDays: number; color: string }> = {
-  A: { label: "Sangat segar", confidence: 95, shelfLifeDays: 7, color: "text-lime" },
-  B: { label: "Segar", confidence: 88, shelfLifeDays: 5, color: "text-yellow-500" },
-  C: { label: "Perlu segera", confidence: 82, shelfLifeDays: 2, color: "text-orange" },
-  D: { label: "Prioritas tinggi", confidence: 78, shelfLifeDays: 1, color: "text-red-600" },
+const commodities = [
+  { value: "chili", label: "Cabai" },
+  { value: "lettuce", label: "Selada" },
+  { value: "potato", label: "Kentang" },
+  { value: "tomato", label: "Tomat" },
+  { value: "onion", label: "Bawang" },
+];
+
+const gradeStyles: Record<string, { label: string; color: string }> = {
+  A: { label: "Sangat segar", color: "text-lime" },
+  B: { label: "Segar", color: "text-yellow-500" },
+  C: { label: "Perlu segera didistribusikan", color: "text-orange" },
+  D: { label: "Tidak layak didistribusikan", color: "text-red-600" },
 };
 
-function getSimulatedGrade(): string {
-  const grades = ["A", "B", "C", "D"];
-  return grades[Math.floor(Math.random() * grades.length)];
+type Phase = "camera" | "analyzing" | "result" | "select";
+
+async function captureFrame(video: HTMLVideoElement): Promise<File> {
+  const canvas = document.createElement("canvas");
+  canvas.width = video.videoWidth;
+  canvas.height = video.videoHeight;
+  const context = canvas.getContext("2d");
+  if (!context || !canvas.width || !canvas.height) {
+    throw new Error("Kamera belum siap. Coba lagi sebentar.");
+  }
+  context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+  const blob = await new Promise<Blob | null>((resolve) =>
+    canvas.toBlob(resolve, "image/jpeg", 0.9),
+  );
+  if (!blob) {
+    throw new Error("Foto gagal diambil.");
+  }
+  return new File([blob], `scresh-${Date.now()}.jpg`, {
+    type: "image/jpeg",
+  });
 }
 
 export function ScanFlow({ batches }: { batches: ScreshBatchRow[] }) {
   const router = useRouter();
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
+  const previewUrlRef = useRef<string | null>(null);
   const [cameraError, setCameraError] = useState(false);
-  const [phase, setPhase] = useState<"scanning" | "result" | "select">("scanning");
-  const [grade, setGrade] = useState("A");
+  const [phase, setPhase] = useState<Phase>("camera");
+  const [commodity, setCommodity] = useState("chili");
+  const [result, setResult] = useState<ScanResult | null>(null);
+  const [previewUrl, setPreviewUrl] = useState("");
   const [barcodeValue, setBarcodeValue] = useState("");
   const [selectedBatchId, setSelectedBatchId] = useState("");
   const [isPending, startTransition] = useTransition();
@@ -35,7 +76,11 @@ export function ScanFlow({ batches }: { batches: ScreshBatchRow[] }) {
     async function startCamera() {
       try {
         const mediaStream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: "environment" },
+          video: {
+            facingMode: { ideal: "environment" },
+            width: { ideal: 1280 },
+            height: { ideal: 1280 },
+          },
         });
         streamRef.current = mediaStream;
         if (videoRef.current) {
@@ -45,37 +90,86 @@ export function ScanFlow({ batches }: { batches: ScreshBatchRow[] }) {
         setCameraError(true);
       }
     }
+
     startCamera();
     return () => {
       streamRef.current?.getTracks().forEach((track) => track.stop());
+      if (previewUrlRef.current) URL.revokeObjectURL(previewUrlRef.current);
     };
   }, []);
 
-  useEffect(() => {
-    if (cameraError || !streamRef.current) return;
-    const simulatedGrade = getSimulatedGrade();
-    setGrade(simulatedGrade);
-    setBarcodeValue(`SCRESH-${Date.now().toString().slice(-8)}`);
-    const timer = window.setTimeout(() => setPhase("result"), 2500);
-    return () => window.clearTimeout(timer);
-  }, [cameraError]);
+  async function handleCapture() {
+    if (!videoRef.current) return;
+
+    try {
+      const image = await captureFrame(videoRef.current);
+      const nextPreviewUrl = URL.createObjectURL(image);
+      if (previewUrlRef.current) URL.revokeObjectURL(previewUrlRef.current);
+      previewUrlRef.current = nextPreviewUrl;
+      setPreviewUrl(nextPreviewUrl);
+      setResult(null);
+      setPhase("analyzing");
+
+      const body = new FormData();
+      body.set("commodity", commodity);
+      body.set("image", image);
+      const response = await fetch("/api/v1/scresh/scan", {
+        method: "POST",
+        body,
+      });
+      const payload = await response.json();
+      if (!response.ok) {
+        throw new Error(
+          typeof payload.error === "string"
+            ? payload.error
+            : "Analisis foto gagal.",
+        );
+      }
+
+      const parsed = parseScanResult(payload);
+      setResult(parsed);
+      setBarcodeValue(`SCRESH-${Date.now().toString().slice(-8)}`);
+      setPhase("result");
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Analisis foto gagal.",
+      );
+      setPhase("camera");
+    }
+  }
+
+  function handleRetake() {
+    setResult(null);
+    setPreviewUrl("");
+    setPhase("camera");
+    if (previewUrlRef.current) {
+      URL.revokeObjectURL(previewUrlRef.current);
+      previewUrlRef.current = null;
+    }
+  }
 
   async function handleSave() {
-    if (!selectedBatchId) {
+    if (!result || !selectedBatchId) {
       toast.error("Pilih batch tujuan penyimpanan.");
       return;
     }
-    const option = gradeOptions[grade];
+
     const formData = new FormData();
     formData.append("batchId", selectedBatchId);
-    formData.append("grade", grade);
-    formData.append("confidenceScore", String(option.confidence));
-    formData.append("shelfLifeHours", String(option.shelfLifeDays * 24));
+    formData.append("grade", result.summary.grade);
+    formData.append(
+      "confidenceScore",
+      String(result.summary.confidencePercent),
+    );
+    formData.append(
+      "shelfLifeHours",
+      String(result.summary.shelfLifeDays * 24),
+    );
 
     startTransition(async () => {
-      const result = await scanFreshnessAction({}, formData);
-      if (result.message) {
-        toast.error(result.message);
+      const saveResult = await scanFreshnessAction({}, formData);
+      if (saveResult.message) {
+        toast.error(saveResult.message);
         return;
       }
       toast.success("ScreshTag berhasil disimpan.");
@@ -83,7 +177,9 @@ export function ScanFlow({ batches }: { batches: ScreshBatchRow[] }) {
     });
   }
 
-  const option = gradeOptions[grade];
+  const gradeStyle = result
+    ? gradeStyles[result.summary.grade]
+    : gradeStyles.A;
 
   return (
     <main className="fixed inset-0 z-40 overflow-hidden bg-black">
@@ -93,143 +189,206 @@ export function ScanFlow({ batches }: { batches: ScreshBatchRow[] }) {
             <div className="grid h-20 w-20 place-items-center rounded-full bg-lime text-forest">
               <CameraOff className="h-10 w-10" strokeWidth={2} />
             </div>
-            <p className="font-sans text-xl font-semibold">Kamera tidak tersedia</p>
-            <p className="text-sm text-white/75">Izinkan akses kamera untuk memindai sayur.</p>
+            <p className="text-xl font-semibold">Kamera tidak tersedia</p>
+            <p className="text-sm text-white/75">
+              Izinkan akses kamera untuk memindai sayur.
+            </p>
           </div>
         ) : (
-          <video ref={videoRef} autoPlay className="h-full w-full object-cover" playsInline muted />
+          <>
+            <video
+              ref={videoRef}
+              autoPlay
+              className={`h-full w-full object-cover ${
+                phase === "camera" ? "block" : "hidden"
+              }`}
+              playsInline
+              muted
+            />
+            {previewUrl ? (
+              <div className="absolute inset-0">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  alt="Foto sayuran yang dianalisis"
+                  className="h-full w-full object-cover"
+                  src={previewUrl}
+                />
+                {result ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    alt=""
+                    aria-hidden="true"
+                    className="absolute inset-0 h-full w-full object-cover"
+                    src={maskDataUrl(result.maskBase64)}
+                  />
+                ) : null}
+              </div>
+            ) : null}
+          </>
         )}
 
-        <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-black/20" />
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/45 via-transparent to-black/55" />
 
         <button
-          className="absolute left-5 top-5 z-10 grid h-12 w-12 place-items-center rounded-full bg-lime text-forest shadow-lg"
+          aria-label="Kembali ke halaman staff"
+          className="absolute left-5 top-5 z-20 grid h-12 w-12 place-items-center rounded-full bg-lime text-forest"
           onClick={() => router.push("/staff")}
           type="button"
         >
           <ArrowLeft className="h-6 w-6" strokeWidth={2.25} />
         </button>
 
-        <div
-          className={`absolute bottom-0 left-0 right-0 z-20 transition-transform duration-500 ease-out ${
-            phase !== "scanning" ? "-translate-y-[30%]" : "translate-y-0"
-          }`}
-        >
-          <div className="mx-auto max-w-md">
-            {phase === "scanning" ? (
-              <div className="rounded-t-[32px] bg-white px-6 pb-10 pt-5 text-center text-forest shadow-[0_-8px_40px_rgba(0,0,0,0.2)]">
-                <div className="mx-auto mb-4 h-1.5 w-12 rounded-full bg-forest/20" />
-                <p className="font-sans text-lg font-semibold">Memindai Sayuran / Scresh Tag...</p>
-                <p className="mt-1 text-sm text-forest/70">Arahkan kamera ke sayur</p>
+        {phase === "camera" && !cameraError ? (
+          <div className="absolute inset-x-0 bottom-0 z-20 mx-auto max-w-md bg-white px-5 pb-8 pt-5 text-forest">
+            <div className="flex items-start gap-3">
+              <ScanLine className="mt-0.5 h-6 w-6 shrink-0 text-violet-600" />
+              <div>
+                <p className="font-semibold">Arahkan kamera ke sayuran</p>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Pastikan objek terlihat jelas dan tidak terlalu bertumpuk.
+                </p>
               </div>
-            ) : null}
+            </div>
+
+            <label className="mt-5 grid gap-2 text-sm font-semibold">
+              Komoditas
+              <select
+                className="h-12 rounded-xl bg-surface px-4 text-base text-forest outline-none ring-1 ring-forest/15 focus:ring-2 focus:ring-violet-600"
+                onChange={(event) => setCommodity(event.target.value)}
+                value={commodity}
+              >
+                {commodities.map((item) => (
+                  <option key={item.value} value={item.value}>
+                    {item.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <button
+              className="mt-5 flex h-14 w-full items-center justify-center gap-2 rounded-xl bg-forest font-bold text-white transition hover:bg-forest/95 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-lime"
+              onClick={handleCapture}
+              type="button"
+            >
+              <Camera className="h-5 w-5" />
+              Ambil foto
+            </button>
           </div>
-        </div>
+        ) : null}
 
-        <div
-          className={`absolute bottom-0 left-0 right-0 z-30 transition-transform duration-500 ease-out ${
-            phase !== "scanning" ? "translate-y-0" : "translate-y-full"
-          }`}
-        >
-          <div className="mx-auto max-w-md rounded-t-[32px] bg-white px-6 pb-10 pt-5 text-forest shadow-[0_-8px_40px_rgba(0,0,0,0.25)]">
-            <div className="mx-auto mb-5 h-1.5 w-12 rounded-full bg-forest/20" />
+        {phase === "analyzing" ? (
+          <div className="absolute inset-x-5 bottom-8 z-20 mx-auto max-w-md rounded-2xl bg-white p-5 text-forest">
+            <div className="flex items-center gap-3">
+              <LoaderCircle className="h-6 w-6 animate-spin text-violet-600 motion-reduce:animate-none" />
+              <div>
+                <p className="font-semibold">Menganalisis objek</p>
+                <p className="text-sm text-muted-foreground">
+                  Memisahkan objek dan memeriksa tingkat kesegaran.
+                </p>
+              </div>
+            </div>
+          </div>
+        ) : null}
 
+        {result && (phase === "result" || phase === "select") ? (
+          <div className="absolute inset-x-0 bottom-0 z-30 mx-auto max-h-[58vh] max-w-md overflow-y-auto rounded-t-2xl bg-white px-5 pb-8 pt-5 text-forest">
             {phase === "result" ? (
               <>
-                <p className="text-xs font-medium text-forest/70">Confidence {option.confidence}%</p>
-                <div className="mt-6 flex items-end gap-3">
+                <div className="flex items-start justify-between gap-4">
                   <div>
-                    <p className="text-sm text-forest/70">Grade</p>
-                    <p className={`font-sans text-6xl font-bold leading-none ${option.color}`}>{grade}</p>
+                    <p className="text-sm font-semibold text-violet-700">
+                      {result.summary.objectCount} objek tersegmentasi
+                    </p>
+                    <div className="mt-3 flex items-end gap-3">
+                      <p
+                        className={`text-6xl font-bold leading-none ${gradeStyle.color}`}
+                      >
+                        {result.summary.grade}
+                      </p>
+                      <div className="pb-1">
+                        <p className="font-semibold">{gradeStyle.label}</p>
+                        <p className="text-sm text-muted-foreground">
+                          Confidence {result.summary.confidencePercent}%
+                        </p>
+                      </div>
+                    </div>
                   </div>
-                  <p className="mb-1.5 text-sm font-medium text-forest/70">{option.label}</p>
+                  <button
+                    className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-surface text-forest"
+                    onClick={handleRetake}
+                    title="Foto ulang"
+                    type="button"
+                  >
+                    <RotateCcw className="h-5 w-5" />
+                  </button>
                 </div>
-                <div className="mt-6">
-                  <p className="text-sm text-forest/70">Perkiraan umur simpan</p>
-                  <p className="font-sans text-4xl font-semibold">
-                    {option.shelfLifeDays} <span className="text-xl font-medium text-forest/70">hari</span>
+
+                <div className="mt-5 flex items-baseline gap-2">
+                  <p className="text-4xl font-semibold">
+                    {result.summary.shelfLifeDays}
+                  </p>
+                  <p className="font-medium text-muted-foreground">
+                    hari umur simpan
                   </p>
                 </div>
-                <div className="mt-6">
-                  <label className="grid gap-2 text-sm font-semibold text-forest">
-                    Simpan ke batch
-                    <select
-                      className="h-11 w-full border-0 border-b border-forest/15 bg-transparent px-0 text-base font-medium text-forest outline-none transition focus:border-forest focus:ring-0"
-                      onChange={(e) => setSelectedBatchId(e.target.value)}
-                      value={selectedBatchId}
-                    >
-                      <option value="">Pilih batch</option>
-                      {batches.map((batch) => (
-                        <option key={batch.id} value={batch.id}>
-                          {batch.batch_code} — {batch.commodity}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                </div>
-                <div className="mt-6 rounded-[16px] bg-lime p-4">
-                  <div className="overflow-hidden rounded-[8px] px-2 py-3">
-                    {barcodeValue ? <BarcodeDisplay value={barcodeValue} /> : null}
-                  </div>
-                  <button
-                    className="mt-3 h-12 w-full rounded-[10px] bg-forest text-sm font-bold text-white transition hover:bg-forest/95 disabled:opacity-60"
-                    disabled={isPending}
-                    onClick={() => setPhase("select")}
-                    type="button"
-                  >
-                    Lanjutkan
-                  </button>
-                </div>
-              </>
-            ) : null}
-
-            {phase === "select" ? (
-              <>
-                <p className="font-sans text-lg font-semibold">Konfirmasi penyimpanan</p>
-                <p className="mt-1 text-sm text-forest/70">
-                  Scan Grade {grade} akan disimpan ke batch yang dipilih.
+                <p className="mt-4 rounded-xl bg-violet-50 p-4 text-sm leading-6 text-violet-950">
+                  {result.summary.recommendation}
                 </p>
-                <div className="mt-5">
-                  <label className="grid gap-2 text-sm font-semibold text-forest">
-                    Batch tujuan
-                    <select
-                      className="h-11 w-full border-0 border-b border-forest/15 bg-transparent px-0 text-base font-medium text-forest outline-none transition focus:border-forest focus:ring-0"
-                      onChange={(e) => setSelectedBatchId(e.target.value)}
-                      value={selectedBatchId}
-                    >
-                      <option value="">Pilih batch</option>
-                      {batches.map((batch) => (
-                        <option key={batch.id} value={batch.id}>
-                          {batch.batch_code} — {batch.commodity}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                </div>
-                <div className="mt-6 rounded-[16px] bg-lime p-4">
-                  <div className="overflow-hidden rounded-[8px] px-2 py-3">
-                    {barcodeValue ? <BarcodeDisplay value={barcodeValue} /> : null}
-                  </div>
-                  <button
-                    className="mt-3 h-12 w-full rounded-[10px] bg-forest text-sm font-bold text-white transition hover:bg-forest/95 disabled:opacity-60"
-                    disabled={isPending}
-                    onClick={handleSave}
-                    type="button"
-                  >
-                    {isPending ? "Menyimpan..." : "Simpan Scresh Tag"}
-                  </button>
-                  <button
-                    className="mt-2 h-12 w-full rounded-[10px] bg-white text-sm font-bold text-forest transition hover:bg-white/90"
-                    onClick={() => setPhase("result")}
-                    type="button"
-                  >
-                    Kembali
-                  </button>
-                </div>
+
+                <button
+                  className="mt-5 h-12 w-full rounded-xl bg-forest font-bold text-white"
+                  onClick={() => setPhase("select")}
+                  type="button"
+                >
+                  Konfirmasi hasil
+                </button>
               </>
-            ) : null}
+            ) : (
+              <>
+                <p className="text-lg font-semibold">Simpan hasil scan</p>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Grade {result.summary.grade} akan dicatat ke batch terpilih.
+                </p>
+                <label className="mt-5 grid gap-2 text-sm font-semibold">
+                  Batch tujuan
+                  <select
+                    className="h-12 rounded-xl bg-surface px-4 text-base text-forest outline-none ring-1 ring-forest/15 focus:ring-2 focus:ring-violet-600"
+                    onChange={(event) =>
+                      setSelectedBatchId(event.target.value)
+                    }
+                    value={selectedBatchId}
+                  >
+                    <option value="">Pilih batch</option>
+                    {batches.map((batch) => (
+                      <option key={batch.id} value={batch.id}>
+                        {batch.batch_code} - {batch.commodity}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+
+                <div className="mt-5 rounded-xl bg-lime p-4">
+                  {barcodeValue ? <BarcodeDisplay value={barcodeValue} /> : null}
+                </div>
+                <button
+                  className="mt-4 h-12 w-full rounded-xl bg-forest font-bold text-white disabled:opacity-60"
+                  disabled={isPending}
+                  onClick={handleSave}
+                  type="button"
+                >
+                  {isPending ? "Menyimpan..." : "Simpan ScreshTag"}
+                </button>
+                <button
+                  className="mt-2 h-12 w-full rounded-xl bg-surface font-bold text-forest"
+                  onClick={() => setPhase("result")}
+                  type="button"
+                >
+                  Kembali ke hasil
+                </button>
+              </>
+            )}
           </div>
-        </div>
+        ) : null}
       </div>
     </main>
   );
