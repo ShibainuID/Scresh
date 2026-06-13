@@ -111,7 +111,6 @@ export function AuthForm({
   function fillForm(
     form: HTMLFormElement,
     preset: Record<string, string>,
-    description: string,
     shortcutKey?: string,
   ) {
     const emailSuffix = Math.floor(1000 + Math.random() * 9000);
@@ -141,7 +140,9 @@ export function AuthForm({
       );
     }
 
-    toast.info("Form terisi.", { description });
+    if (!shortcutKey) {
+      toast.info("Form terisi.");
+    }
   }
 
   return (
@@ -165,9 +166,6 @@ export function AuthForm({
           fillForm(
             event.currentTarget,
             rememberedPreset ?? autofillShortcuts[key],
-            rememberedPreset
-              ? `Data registrasi ${key.toUpperCase()} dipakai.`
-              : `Preset ${key.toUpperCase()} dipakai.`,
             key,
           );
           setShortcutMode(false);
@@ -193,15 +191,12 @@ export function AuthForm({
 
         if (autofillShortcuts) {
           setShortcutMode(true);
-          toast.info("Pilih preset demo.", {
-            description: "Tekan P=Petugas, M=Manager, S=Supervisor, B=Bank.",
-          });
           return;
         }
 
         const preset =
           autofillPresets[Math.floor(Math.random() * autofillPresets.length)];
-        fillForm(event.currentTarget, preset, "Tekan submit untuk melanjutkan.");
+        fillForm(event.currentTarget, preset);
       }}
       onSubmit={(event) => {
         const form = event.currentTarget;
@@ -234,12 +229,6 @@ export function AuthForm({
         <p className="text-2xl font-semibold leading-8 text-forest">{title}</p>
         <p className="text-sm leading-6 text-[#646464]">{description}</p>
       </div>
-
-      {state.message ? (
-        <p className="rounded-[10px] bg-orange/10 px-3 py-2 text-sm text-foreground">
-          {state.message}
-        </p>
-      ) : null}
 
       <div className="grid gap-7">
         {fields.map((field) => (
