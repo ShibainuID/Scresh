@@ -186,8 +186,7 @@ create table if not exists audit_anomalies (
   risk_score integer not null,
   reason text not null,
   status text not null default 'open',
-  created_at timestamptz not null default now(),
-  unique (tenant_id, loan_id)
+  created_at timestamptz not null default now()
 );
 
 create table if not exists notifications (
@@ -262,11 +261,8 @@ create index if not exists scresh_batches_tenant_id_idx on scresh_batches(tenant
 create index if not exists scresh_movements_batch_id_idx on scresh_movements(batch_id);
 create index if not exists partner_portfolio_reports_tenant_id_idx on partner_portfolio_reports(tenant_id);
 create index if not exists audit_anomalies_tenant_id_idx on audit_anomalies(tenant_id);
-do $$ begin
-  alter table audit_anomalies add constraint audit_anomalies_tenant_loan_unique unique (tenant_id, loan_id);
-exception
-  when duplicate_object then null;
-end $$;
+create unique index if not exists audit_anomalies_tenant_loan_unique_idx
+  on audit_anomalies (tenant_id, loan_id);
 create index if not exists notifications_user_id_read_idx on notifications(user_id, is_read, created_at desc);
 create index if not exists audit_reviews_loan_id_idx on audit_reviews(loan_id);
 create index if not exists member_consents_member_idx on member_consents(member_id, tenant_id, purpose);
