@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test";
 import {
   getScanErrorMessage,
   parseScanResult,
+  supportsAnimatedSegmentation,
   visualizationDataUrl,
 } from "./scan-result";
 
@@ -9,6 +10,11 @@ test("builds a transparent PNG data URL from the AI mask", () => {
   expect(visualizationDataUrl("image/png", "encoded-mask")).toBe(
     "data:image/png;base64,encoded-mask",
   );
+});
+
+test("animates transparent segmentation masks only", () => {
+  expect(supportsAnimatedSegmentation("image/png")).toBe(true);
+  expect(supportsAnimatedSegmentation("image/jpeg")).toBe(false);
 });
 
 describe("getScanErrorMessage", () => {

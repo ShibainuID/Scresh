@@ -25,6 +25,12 @@ export function visualizationDataUrl(
   return `data:${mediaType};base64,${base64}`;
 }
 
+export function supportsAnimatedSegmentation(
+  mediaType: ScanResult["visualizationMediaType"],
+) {
+  return mediaType === "image/png";
+}
+
 export function getScanErrorMessage(payload: unknown, fallback: string) {
   if (
     isRecord(payload) &&

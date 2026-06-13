@@ -84,3 +84,60 @@ p.caption {
 .bg-gradient-2 {
     @apply bg-gradient-to-b from-[#b5e930] via-60% via-[#b5e930] to-[#013425];
 }
+
+.segmentation-shimmer {
+    pointer-events: none;
+    overflow: hidden;
+    mix-blend-mode: screen;
+    -webkit-mask-position: center;
+    mask-position: center;
+    -webkit-mask-repeat: no-repeat;
+    mask-repeat: no-repeat;
+    -webkit-mask-size: cover;
+    mask-size: cover;
+}
+
+.segmentation-shimmer::before {
+    position: absolute;
+    inset: -25% -70%;
+    content: "";
+    background: linear-gradient(
+        105deg,
+        transparent 42%,
+        rgb(255 255 255 / 12%) 47%,
+        rgb(245 232 255 / 82%) 50%,
+        rgb(255 255 255 / 12%) 53%,
+        transparent 58%
+    );
+    opacity: 0;
+    transform: translate3d(-42%, 0, 0);
+    animation: segmentation-shimmer-sweep 2.8s
+        cubic-bezier(0.22, 1, 0.36, 1) infinite;
+    will-change: transform, opacity;
+}
+
+@keyframes segmentation-shimmer-sweep {
+    0%,
+    15% {
+        opacity: 0;
+        transform: translate3d(-42%, 0, 0);
+    }
+
+    25%,
+    75% {
+        opacity: 1;
+    }
+
+    85%,
+    100% {
+        opacity: 0;
+        transform: translate3d(42%, 0, 0);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .segmentation-shimmer::before {
+        animation: none;
+        opacity: 0;
+    }
+}

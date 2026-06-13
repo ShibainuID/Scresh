@@ -20,6 +20,7 @@ import {
 import {
   getScanErrorMessage,
   parseScanResult,
+  supportsAnimatedSegmentation,
   type ScanResult,
   visualizationDataUrl,
 } from "./scan-result";
@@ -204,6 +205,12 @@ export function ScanFlow({ targetBatch }: ScanFlowProps) {
   const resultVisible = Boolean(
     result && phase === "result",
   );
+  const visualizationUrl = result
+    ? visualizationDataUrl(
+        result.visualizationMediaType,
+        result.visualizationBase64,
+      )
+    : "";
 
   return (
     <main className="fixed inset-0 z-40 overflow-hidden bg-black">
@@ -240,16 +247,27 @@ export function ScanFlow({ targetBatch }: ScanFlowProps) {
                   src={previewUrl}
                 />
                 {result ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    alt=""
-                    aria-hidden="true"
-                    className="absolute inset-0 h-full w-full object-cover"
-                    src={visualizationDataUrl(
+                  <>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      alt=""
+                      aria-hidden="true"
+                      className="absolute inset-0 h-full w-full object-cover"
+                      src={visualizationUrl}
+                    />
+                    {supportsAnimatedSegmentation(
                       result.visualizationMediaType,
-                      result.visualizationBase64,
-                    )}
-                  />
+                    ) ? (
+                      <div
+                        aria-hidden="true"
+                        className="segmentation-shimmer absolute inset-0"
+                        style={{
+                          WebkitMaskImage: `url("${visualizationUrl}")`,
+                          maskImage: `url("${visualizationUrl}")`,
+                        }}
+                      />
+                    ) : null}
+                  </>
                 ) : null}
               </div>
             ) : null}
