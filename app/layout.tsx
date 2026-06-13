@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { DM_Sans, DM_Serif_Display } from "next/font/google";
+import { AppToaster } from "@/components/app-toaster";
 import "./globals.css";
 
 const dmSans = DM_Sans({
@@ -28,7 +29,10 @@ export default function RootLayout({
       lang="en"
       className={`${dmSans.variable} ${dmSerifDisplay.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col">
+        {children}
+        <AppToaster />
+      </body>
     </html>
   );
 }

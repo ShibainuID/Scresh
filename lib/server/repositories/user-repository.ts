@@ -1,6 +1,6 @@
 import "server-only";
 
-import type { Role, UserPrincipal } from "@/lib/domain/auth";
+import { normalizeRoles, type Role, type UserPrincipal } from "@/lib/domain/auth";
 import type { Database } from "@/lib/server/db/client";
 
 type UserRow = {
@@ -132,7 +132,7 @@ export class UserRepository {
       email: row.email,
       passwordHash: row.password_hash,
       isActive: row.is_active,
-      roles: row.roles ?? [],
+      roles: normalizeRoles(row.roles),
     };
   }
 }

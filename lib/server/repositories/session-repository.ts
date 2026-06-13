@@ -1,6 +1,6 @@
 import "server-only";
 
-import type { SessionPrincipal } from "@/lib/domain/auth";
+import { normalizeRoles, type SessionPrincipal } from "@/lib/domain/auth";
 import type { Database } from "@/lib/server/db/client";
 
 type SessionRow = {
@@ -67,7 +67,7 @@ export class SessionRepository {
         tenantId: row.tenant_id,
         name: row.name,
         email: row.email,
-        roles: (row.roles ?? []) as SessionPrincipal["user"]["roles"],
+        roles: normalizeRoles(row.roles),
       },
     };
   }

@@ -3,7 +3,7 @@ import "server-only";
 import { cache } from "react";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import type { Role, SessionPrincipal } from "@/lib/domain/auth";
+import { normalizeRoles, type Role, type SessionPrincipal } from "@/lib/domain/auth";
 import { services } from "@/lib/server/services/container";
 import { sessionCookieName } from "./cookies";
 
@@ -25,11 +25,22 @@ export async function requireSession(): Promise<SessionPrincipal> {
 
 export async function requireRole(roles: Role[]) {
   const session = await requireSession();
+  const sessionRoles = normalizeRoles(session.user.roles);
+  const normalizedSession: SessionPrincipal = {
+    ...session,
+    user: {
+      ...session.user,
+      roles: sessionRoles,
+    },
+  };
 
-  try {
-    services.rbac.assertRole(session, roles);
-    return session;
-  } catch {
-    redirect(services.rbac.getPrimaryHome(session));
+  if (sessionRoles.length === 0) {
+    redirect("/login");
   }
+
+  if (!services.rbac.hasRole(normalizedSession, roles)) {
+    redirect(services.rbac.getPrimaryHome(normalizedSession));
+  }
+
+  return normalizedSession;
 }

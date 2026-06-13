@@ -20,7 +20,18 @@ export async function loginAction(
     return { errors: parsed.error.flatten().fieldErrors };
   }
 
-  const result = await services.auth.login(parsed.data);
+  let result;
+
+  try {
+    result = await services.auth.login(parsed.data);
+  } catch (error) {
+    return {
+      message:
+        error instanceof Error
+          ? error.message
+          : "Terjadi kesalahan saat login.",
+    };
+  }
 
   if (!result.ok) {
     return { message: result.message };
@@ -44,13 +55,33 @@ export async function registerAction(
     email: formData.get("email"),
     password: formData.get("password"),
     role: formData.get("role") || "staff",
+    cooperativeName: formData.get("cooperativeName"),
+    cooperativeLegalName:
+      formData.get("cooperativeLegalName") || formData.get("cooperativeName"),
+    cooperativeRegistrationNumber: formData.get("cooperativeRegistrationNumber"),
+    cooperativeAddress: formData.get("cooperativeAddress"),
+    cooperativeCity: formData.get("cooperativeCity"),
+    cooperativeProvince: formData.get("cooperativeProvince"),
+    cooperativeContactPhone: formData.get("cooperativeContactPhone"),
+    commodityFocus: formData.get("commodityFocus"),
   });
 
   if (!parsed.success) {
     return { errors: parsed.error.flatten().fieldErrors };
   }
 
-  const result = await services.auth.register(parsed.data);
+  let result;
+
+  try {
+    result = await services.auth.register(parsed.data);
+  } catch (error) {
+    return {
+      message:
+        error instanceof Error
+          ? error.message
+          : "Terjadi kesalahan saat registrasi.",
+    };
+  }
 
   if (!result.ok) {
     return { message: result.message };

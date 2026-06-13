@@ -2,6 +2,7 @@ import type { Role } from "./auth";
 
 export const roleHomePath: Record<Role, string> = {
   staff: "/staff",
+  credit: "/credit",
   manager: "/manager",
   supervisor: "/supervisor",
   partner: "/partner",
@@ -10,6 +11,7 @@ export const roleHomePath: Record<Role, string> = {
 
 export const roleLabels: Record<Role, string> = {
   staff: "Staff",
+  credit: "Petugas Kredit",
   manager: "Manager",
   supervisor: "Supervisor",
   partner: "Partner",
@@ -17,8 +19,19 @@ export const roleLabels: Record<Role, string> = {
 };
 
 export const rolePermissions: Record<Role, string[]> = {
-  staff: ["members:read", "scresh:scan", "loans:create"],
-  manager: ["members:read", "loans:approve", "reports:read"],
+  staff: ["scresh:scan", "stock:move", "reservations:create"],
+  credit: ["members:read", "credit:assess", "loans:create"],
+  manager: [
+    "scresh:scan",
+    "stock:move",
+    "reservations:create",
+    "members:read",
+    "credit:assess",
+    "loans:create",
+    "loans:approve",
+    "stock:approve",
+    "reports:read",
+  ],
   supervisor: ["audit:read", "risk:read", "reports:read"],
   partner: ["financing:read", "portfolio:read"],
   admin: ["*"],
