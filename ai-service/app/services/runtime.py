@@ -30,7 +30,12 @@ class TorchSegmenter:
     ):
         import torch
         from torch import nn
-        from transformers import Dinov3Config, Dinov3Model
+        from transformers.models.dinov3_vit.configuration_dinov3_vit import (
+            DINOv3ViTConfig,
+        )
+        from transformers.models.dinov3_vit.modeling_dinov3_vit import (
+            DINOv3ViTModel,
+        )
 
         class DecoderBlock(nn.Module):
             def __init__(self, in_channels: int, out_channels: int):
@@ -59,7 +64,7 @@ class TorchSegmenter:
         class SegmentationModel(nn.Module):
             def __init__(self):
                 super().__init__()
-                config = Dinov3Config(
+                config = DINOv3ViTConfig(
                     hidden_size=384,
                     num_hidden_layers=12,
                     num_attention_heads=6,
@@ -67,7 +72,7 @@ class TorchSegmenter:
                     patch_size=16,
                     num_register_tokens=4,
                 )
-                self.backbone = Dinov3Model(config)
+                self.backbone = DINOv3ViTModel(config)
                 self.decoder = nn.Sequential(
                     DecoderBlock(384, 256),
                     DecoderBlock(256, 128),
