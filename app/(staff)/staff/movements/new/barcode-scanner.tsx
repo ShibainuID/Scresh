@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { BrowserMultiFormatReader } from "@zxing/browser";
-import { X, ScanLine, CameraOff } from "lucide-react";
+import { ArrowLeft, CameraOff } from "lucide-react";
 
 export type BarcodeScannerProps = {
   isOpen: boolean;
@@ -12,41 +12,33 @@ export type BarcodeScannerProps = {
 
 export function BarcodeScanner({ isOpen, onClose, onScan }: BarcodeScannerProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
-  const controlsRef = useRef<AbortController | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [isStarting, setIsStarting] = useState(true);
+  const [detected, setDetected] = useState(false);
 
   useEffect(() => {
     if (!isOpen) {
-      controlsRef.current?.abort();
       setError(null);
-      setIsStarting(false);
+      setDetected(false);
       return;
     }
 
     const reader = new BrowserMultiFormatReader();
-    const abortController = new AbortController();
-    controlsRef.current = abortController;
-
-    setIsStarting(true);
     setError(null);
+    setDetected(false);
 
     reader
       .decodeFromVideoDevice(undefined, videoRef.current ?? "video", (result, err) => {
+        if (detected) return;
         if (result) {
+          setDetected(true);
           onScan(result.getText());
           onClose();
         }
         if (err && err.name !== "NotFoundException") {
-          // Ignore normal "no barcode in frame" errors
           console.warn("Scanner error:", err);
         }
       })
-      .then(() => {
-        setIsStarting(false);
-      })
       .catch((scanError) => {
-        setIsStarting(false);
         setError("Tidak dapat mengakses kamera. Pastikan izin kamera diberikan.");
         console.error("Scanner init error:", scanError);
       });
@@ -58,31 +50,16 @@ export function BarcodeScanner({ isOpen, onClose, onScan }: BarcodeScannerProps)
         tracks.forEach((track) => track.stop());
         video.srcObject = null;
       }
-      abortController.abort();
     };
   }, [isOpen, onClose, onScan]);
 
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col bg-black">
-      <div className="flex items-center justify-between bg-forest px-5 py-4 text-white">
-        <div className="flex items-center gap-3">
-          <ScanLine className="h-5 w-5 text-lime" strokeWidth={2.25} />
-          <span className="font-sans text-base font-semibold">Scan ScreshTag</span>
-        </div>
-        <button
-          className="grid h-10 w-10 place-items-center rounded-full bg-white/10 text-white"
-          onClick={onClose}
-          type="button"
-        >
-          <X className="h-5 w-5" strokeWidth={2.25} />
-        </button>
-      </div>
-
-      <div className="relative flex-1">
+    <div className="fixed inset-0 z-50 overflow-hidden bg-black">
+      <div className="relative h-full w-full">
         {error ? (
-          <div className="flex h-full flex-col items-center justify-center gap-4 px-8 text-center text-white">
+          <div className="flex h-full flex-col items-center justify-center gap-4 bg-forest px-8 text-center text-white">
             <div className="grid h-20 w-20 place-items-center rounded-full bg-lime text-forest">
               <CameraOff className="h-10 w-10" strokeWidth={2} />
             </div>
@@ -90,23 +67,27 @@ export function BarcodeScanner({ isOpen, onClose, onScan }: BarcodeScannerProps)
             <p className="text-sm text-white/75">{error}</p>
           </div>
         ) : (
-          <>
-            <video ref={videoRef} className="h-full w-full object-cover" muted playsInline />
-            <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
-              <div className="relative h-48 w-72 rounded-[18px] border-2 border-lime/70 bg-white/5">
-                <div className="absolute -top-1 left-1/2 h-0.5 w-12 -translate-x-1/2 bg-lime" />
-                <div className="absolute -bottom-1 left-1/2 h-0.5 w-12 -translate-x-1/2 bg-lime" />
-              </div>
-              <p className="mt-5 text-sm font-medium text-white/90">
-                Arahkan barcode ke dalam kotak
-              </p>
+          <video ref={videoRef} autoPlay className="h-full w-full object-cover" playsInline muted />
+        )}
+
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-black/20" />
+
+        <button
+          className="absolute left-5 top-5 z-10 grid h-12 w-12 place-items-center rounded-full bg-lime text-forest shadow-lg"
+          onClick={onClose}
+          type="button"
+        >
+          <ArrowLeft className="h-6 w-6" strokeWidth={2.25} />
+        </button>
+
+        {!error && (
+          <div className="absolute bottom-0 left-0 right-0 z-20 translate-y-0">
+            <div className="mx-auto max-w-md rounded-t-[32px] bg-white px-6 pb-10 pt-5 text-center text-forest shadow-[0_-8px_40px_rgba(0,0,0,0.2)]">
+              <div className="mx-auto mb-4 h-1.5 w-12 rounded-full bg-forest/20" />
+              <p className="font-sans text-lg font-semibold">Memindai ScreshTag...</p>
+              <p className="mt-1 text-sm text-forest/70">Arahkan barcode ke dalam bingkai kamera</p>
             </div>
-            {isStarting && (
-              <div className="absolute inset-0 flex items-center justify-center bg-black/60 text-white">
-                <p className="font-sans text-base font-semibold">Memulai kamera...</p>
-              </div>
-            )}
-          </>
+          </div>
         )}
       </div>
     </div>

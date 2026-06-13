@@ -31,7 +31,7 @@ type CameraScannerProps = {
 export function CameraScanner({ batchId, batchCode, commodity }: CameraScannerProps) {
   const router = useRouter();
   const videoRef = useRef<HTMLVideoElement>(null);
-  const [stream, setStream] = useState<MediaStream | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
   const [cameraError, setCameraError] = useState(false);
   const [phase, setPhase] = useState<"scanning" | "result">("scanning");
   const [grade, setGrade] = useState("A");
@@ -44,7 +44,7 @@ export function CameraScanner({ batchId, batchCode, commodity }: CameraScannerPr
         const mediaStream = await navigator.mediaDevices.getUserMedia({
           video: { facingMode: "environment" },
         });
-        setStream(mediaStream);
+        streamRef.current = mediaStream;
         if (videoRef.current) {
           videoRef.current.srcObject = mediaStream;
         }
@@ -56,12 +56,12 @@ export function CameraScanner({ batchId, batchCode, commodity }: CameraScannerPr
     startCamera();
 
     return () => {
-      stream?.getTracks().forEach((track) => track.stop());
+      streamRef.current?.getTracks().forEach((track) => track.stop());
     };
   }, []);
 
   useEffect(() => {
-    if (cameraError || !stream) return;
+    if (cameraError || !streamRef.current) return;
 
     const simulatedGrade = getSimulatedGrade();
     setGrade(simulatedGrade);
@@ -72,7 +72,7 @@ export function CameraScanner({ batchId, batchCode, commodity }: CameraScannerPr
     }, 2500);
 
     return () => window.clearTimeout(timer);
-  }, [cameraError, stream, batchCode]);
+  }, [cameraError, batchCode]);
 
   async function handleSave() {
     const option = gradeOptions[grade];
@@ -91,6 +91,7 @@ export function CameraScanner({ batchId, batchCode, commodity }: CameraScannerPr
       }
 
       toast.success("ScreshTag berhasil disimpan.");
+      router.push(`/staff/batches/${batchId}/tag`);
     });
   }
 
