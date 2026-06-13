@@ -2,7 +2,7 @@
 
 import { useActionState } from "react";
 import { CheckCircle2, FileClock } from "lucide-react";
-import { addAuditReviewAction } from "@/app/actions/audit";
+import { queuedAddAuditReviewAction as addAuditReviewAction } from "@/lib/client/wrapped-actions";
 
 export function AuditReviewForm({ loanId }: { loanId: string }) {
   const [state, action, isPending] = useActionState(addAuditReviewAction, {});

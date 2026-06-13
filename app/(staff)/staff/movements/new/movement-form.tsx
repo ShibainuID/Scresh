@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState, useState } from "react";
-import { recordMovementAction } from "@/app/actions/scresh";
+import { queuedRecordMovementAction as recordMovementAction } from "@/lib/client/wrapped-actions";
 import type { ScreshBatchRow } from "@/lib/server/repositories/scresh-batch-repository";
 import { BarcodeScanner } from "./barcode-scanner";
 import { ScanLine } from "lucide-react";

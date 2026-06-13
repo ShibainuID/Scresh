@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState, useEffect, useState } from "react";
-import { registerBatchAction } from "@/app/actions/scresh";
+import { queuedRegisterBatchAction as registerBatchAction } from "@/lib/client/wrapped-actions";
 import { PageHeader } from "@/components/page-header";
 import {
   getDraftCommodityLabel,

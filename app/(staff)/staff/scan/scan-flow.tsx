@@ -11,7 +11,7 @@ import {
   RotateCcw,
   ScanLine,
 } from "lucide-react";
-import { scanFreshnessAction } from "@/app/actions/scresh";
+import { queuedScanFreshnessAction as scanFreshnessAction } from "@/lib/client/wrapped-actions";
 import {
   getAiCommodityKey,
   SCAN_DRAFT_STORAGE_KEY,

@@ -2,7 +2,11 @@
 
 import { useActionState } from "react";
 import { CheckCircle2, FileClock, XCircle } from "lucide-react";
-import { approveLoanAction, rejectLoanAction, requestCollateralAction } from "@/app/actions/manager";
+import {
+  queuedApproveLoanAction as approveLoanAction,
+  queuedRejectLoanAction as rejectLoanAction,
+  queuedRequestCollateralAction as requestCollateralAction,
+} from "@/lib/client/wrapped-actions";
 
 export function ManagerDecisionForm({ loanId, isHighRisk }: { loanId: string; isHighRisk: boolean }) {
   const [approveState, approveAction, approvePending] = useActionState(approveLoanAction, {});

@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
-import { grantConsentAction } from "@/app/actions/credit";
+import { queuedGrantConsentAction as grantConsentAction } from "@/lib/client/wrapped-actions";
 
 export function ConsentForm({ memberId, tenantId }: { memberId: string; tenantId: string }) {
   const [state, action, isPending] = useActionState(grantConsentAction, {});

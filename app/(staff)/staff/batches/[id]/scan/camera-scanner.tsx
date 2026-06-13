@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { ArrowLeft, CameraOff } from "lucide-react";
-import { scanFreshnessAction } from "@/app/actions/scresh";
+import { queuedScanFreshnessAction as scanFreshnessAction } from "@/lib/client/wrapped-actions";
 import { getColdStorageShelfLifeDays, type Grade } from "@/app/(staff)/staff/scan/scan-result";
 import { BarcodeDisplay } from "@/components/barcode-display";
 

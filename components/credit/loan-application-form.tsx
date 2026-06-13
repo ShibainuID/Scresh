@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
-import { createLoanAction } from "@/app/actions/credit";
+import { queuedCreateLoanAction as createLoanAction } from "@/lib/client/wrapped-actions";
 
 export function LoanApplicationForm({
   members,

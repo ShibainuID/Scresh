@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Bell, X } from "lucide-react";
 import Link from "next/link";
 import { useActionState } from "react";
-import { markNotificationReadAction } from "@/app/actions/audit";
+import { queuedMarkNotificationReadAction as markNotificationReadAction } from "@/lib/client/wrapped-actions";
 import type { NotificationRow } from "@/lib/server/repositories/notification-repository";
 
 export function NotificationDrawer({
@@ -38,7 +38,10 @@ export function NotificationDrawer({
             className="fixed inset-0 z-40 bg-black/20"
             onClick={() => setOpen(false)}
           />
-          <div className="absolute right-0 top-14 z-50 w-80 rounded-[20px] bg-white p-4 shadow-[0_8px_40px_rgba(0,0,0,0.2)]">
+          <div
+            className="fixed left-4 right-4 top-20 z-50 max-h-[70vh] rounded-[20px] bg-white p-4 shadow-[0_8px_40px_rgba(0,0,0,0.2)] sm:absolute sm:left-auto sm:right-0 sm:top-14 sm:w-80"
+            onClick={(event) => event.stopPropagation()}
+          >
             <div className="mb-3 flex items-center justify-between">
               <span className="font-sans font-semibold text-forest">Notifikasi</span>
               <button
@@ -59,16 +62,17 @@ export function NotificationDrawer({
             {notifications.length === 0 ? (
               <p className="py-6 text-center text-sm text-forest/60">Tidak ada notifikasi.</p>
             ) : (
-              <div className="max-h-80 space-y-2 overflow-y-auto">
+              <div className="max-h-80 space-y-2 overflow-y-auto overscroll-contain">
                 {notifications.map((notification) => (
                   <form
                     key={notification.id}
                     action={action}
                     className={`rounded-[14px] p-3 transition ${notification.is_read ? "bg-forest/5" : "bg-lime/30"}`}
+                    onClick={(event) => event.stopPropagation()}
                   >
                     <input name="notificationId" type="hidden" value={notification.id} />
                     <Link
-                      className="block"
+                      className="block touch-manipulation"
                       href={notification.resource_id ? `/supervisor/audit/${notification.resource_id}` : "/supervisor/audit"}
                       onClick={() => setOpen(false)}
                     >

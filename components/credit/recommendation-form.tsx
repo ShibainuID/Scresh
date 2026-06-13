@@ -2,7 +2,7 @@
 
 import { useActionState } from "react";
 import { CheckCircle2, FileClock, XCircle } from "lucide-react";
-import { submitRecommendationAction } from "@/app/actions/credit";
+import { queuedSubmitRecommendationAction as submitRecommendationAction } from "@/lib/client/wrapped-actions";
 
 export function RecommendationForm({ loanId }: { loanId: string }) {
   const [state, action, isPending] = useActionState(submitRecommendationAction, {});

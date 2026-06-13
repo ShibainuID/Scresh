@@ -5,13 +5,19 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "build:webpack": "next build --webpack",
     "start": "next start",
     "lint": "eslint",
     "db:migrate": "node scripts/db.mjs migrate",
     "db:seed": "node scripts/db.mjs seed",
-    "db:reset": "node scripts/db.mjs reset"
+    "db:reset": "node scripts/db.mjs reset",
+    "icons:generate": "node scripts/generate-icons.mjs"
   },
   "dependencies": {
+    "@serwist/core": "^9.5.11",
+    "@serwist/next": "^9.5.11",
+    "@serwist/precaching": "^9.5.11",
+    "@serwist/sw": "^9.5.11",
     "@types/pg": "^8.20.0",
     "@zxing/browser": "^0.2.0",
     "bcryptjs": "^3.0.3",
