@@ -1,5 +1,7 @@
-import { spawnSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
+import pg from "pg";
+
+const { Client } = pg;
 
 for (const envFile of [".env.local", ".env"]) {
   if (!existsSync(envFile)) {
@@ -52,13 +54,24 @@ if (!databaseUrl) {
   process.exit(1);
 }
 
-for (const file of files) {
-  const result = spawnSync("psql", [databaseUrl, "-f", file], {
-    stdio: "inherit",
-    shell: process.platform === "win32",
-  });
+const client = new Client({ connectionString: databaseUrl });
 
-  if (result.status !== 0) {
-    process.exit(result.status ?? 1);
+async function run() {
+  await client.connect();
+
+  try {
+    for (const file of files) {
+      const sql = readFileSync(file, "utf8");
+      console.log(`Running ${file}...`);
+      await client.query(sql);
+      console.log(`Finished ${file}`);
+    }
+  } finally {
+    await client.end();
   }
 }
+
+run().catch((error) => {
+  console.error(error);
+  process.exit(1);
+});
