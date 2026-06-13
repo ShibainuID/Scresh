@@ -16,9 +16,9 @@ import { BarcodeDisplay } from "@/components/barcode-display";
 import type { ScreshBatchRow } from "@/lib/server/repositories/scresh-batch-repository";
 import {
   getScanErrorMessage,
-  maskDataUrl,
   parseScanResult,
   type ScanResult,
+  visualizationDataUrl,
 } from "./scan-result";
 
 const commodities = [
@@ -224,7 +224,10 @@ export function ScanFlow({ batches }: { batches: ScreshBatchRow[] }) {
                     alt=""
                     aria-hidden="true"
                     className="absolute inset-0 h-full w-full object-cover"
-                    src={maskDataUrl(result.maskBase64)}
+                    src={visualizationDataUrl(
+                      result.visualizationMediaType,
+                      result.visualizationBase64,
+                    )}
                   />
                 ) : null}
               </div>

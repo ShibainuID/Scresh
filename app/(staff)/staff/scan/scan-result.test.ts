@@ -1,12 +1,12 @@
 import { describe, expect, test } from "bun:test";
 import {
   getScanErrorMessage,
-  maskDataUrl,
   parseScanResult,
+  visualizationDataUrl,
 } from "./scan-result";
 
 test("builds a transparent PNG data URL from the AI mask", () => {
-  expect(maskDataUrl("encoded-mask")).toBe(
+  expect(visualizationDataUrl("image/png", "encoded-mask")).toBe(
     "data:image/png;base64,encoded-mask",
   );
 });
@@ -53,7 +53,28 @@ describe("parseScanResult", () => {
     expect(result.summary.grade).toBe("A");
     expect(result.summary.objectCount).toBe(3);
     expect(result.summary.confidencePercent).toBe(91);
-    expect(result.maskBase64).toBe("encoded-mask");
+    expect(result.visualizationBase64).toBe("encoded-mask");
+    expect(result.visualizationMediaType).toBe("image/png");
+  });
+
+  test("accepts the deployed Azure response without a mask overlay", () => {
+    const result = parseScanResult({
+      commodity: "lettuce",
+      summary: {
+        freshness_class: "fresh",
+        confidence: 0.87,
+        grade: "A",
+        shelf_life_days: 5,
+        recommendation: "Excellent freshness.",
+        object_count: 2,
+      },
+      objects: [],
+      overlay_media_type: "image/jpeg",
+      overlay_base64: "encoded-overlay",
+    });
+
+    expect(result.visualizationBase64).toBe("encoded-overlay");
+    expect(result.visualizationMediaType).toBe("image/jpeg");
   });
 
   test("rejects malformed responses", () => {

@@ -10,15 +10,19 @@ export type ScanResult = {
     recommendation: string;
     objectCount: number;
   };
-  maskBase64: string;
+  visualizationBase64: string;
+  visualizationMediaType: "image/png" | "image/jpeg";
 };
 
 function isRecord(value: unknown): value is UnknownRecord {
   return typeof value === "object" && value !== null;
 }
 
-export function maskDataUrl(maskBase64: string) {
-  return `data:image/png;base64,${maskBase64}`;
+export function visualizationDataUrl(
+  mediaType: ScanResult["visualizationMediaType"],
+  base64: string,
+) {
+  return `data:${mediaType};base64,${base64}`;
 }
 
 export function getScanErrorMessage(payload: unknown, fallback: string) {
@@ -39,6 +43,12 @@ export function parseScanResult(payload: unknown): ScanResult {
 
   const { summary } = payload;
   const grade = summary.grade;
+  const hasMask =
+    payload.mask_media_type === "image/png" &&
+    typeof payload.mask_base64 === "string";
+  const hasOverlay =
+    payload.overlay_media_type === "image/jpeg" &&
+    typeof payload.overlay_base64 === "string";
   if (
     typeof payload.commodity !== "string" ||
     !["A", "B", "C", "D"].includes(String(grade)) ||
@@ -47,7 +57,7 @@ export function parseScanResult(payload: unknown): ScanResult {
     typeof summary.shelf_life_days !== "number" ||
     typeof summary.recommendation !== "string" ||
     typeof summary.object_count !== "number" ||
-    typeof payload.mask_base64 !== "string"
+    (!hasMask && !hasOverlay)
   ) {
     throw new Error("Respons AI tidak valid");
   }
@@ -62,6 +72,9 @@ export function parseScanResult(payload: unknown): ScanResult {
       recommendation: summary.recommendation,
       objectCount: summary.object_count,
     },
-    maskBase64: payload.mask_base64,
+    visualizationBase64: hasMask
+      ? (payload.mask_base64 as string)
+      : (payload.overlay_base64 as string),
+    visualizationMediaType: hasMask ? "image/png" : "image/jpeg",
   };
 }
